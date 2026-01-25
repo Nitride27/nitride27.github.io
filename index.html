@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Space Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- GSAP -->
+  <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/ScrollToPlugin.min.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="index-page">
+
+<nav>
+  <a href="#" data-section="introduction">Introduction</a>
+  <a href="#" data-section="projects">Projects</a>
+  <a href="#" data-section="skills">Skills</a>
+  <a href="#" data-section="about">About</a>
+  <a href="#" data-section="contact">Contact</a>
+</nav>
+
+
+
+<!-- 3D SCENE -->
+<canvas id="space-canvas"></canvas>
+
+<!-- HORIZONTAL SECTIONS -->
+<!-- HORIZONTAL SECTIONS -->
+<div class="container">
+  <section class="panel" id="introduction">
+    <div class="welcome">
+      <h1>HI,<br> WELCOME<br> TO THE<br> SPACESHIP<br>THIS IS<br> YOUR CAPTAIN<br> SAMRIDHA<br> SHRESTHA</h1>
+      <img src="images/Sam.webp" alt="Samridha" class="captain-photo">
+    </div>
+    <div class="planet-label">Planet: Introduction</div>
+    <div class="instructions">Scroll to move <br>Click to display</div>
+  </section>
+  <section class="panel" id="projects">
+    <div class="planet-label">Planet: Projects</div>
+  </section>
+  <section class="panel" id="skills">
+   <div class="planet-label">Planet: Skills</div>
+  </section>
+  <section class="panel" id="about">
+    <div class="planet-label">Planet: About</div>
+  </section>
+  <section class="panel" id="contact">
+   <div class="planet-label">Planet: Contact</div>
+  </section>
+</div>
+
+<audio id="bg-audio" autoplay loop>
+  <source src="audio/Interstellar.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+<button onclick="toggleAudio()" class="audio-btn">🔊</button>
+
+<script>
+  function toggleAudio() {
+    const audio = document.getElementById("bg-audio");
+    audio.muted = !audio.muted;
+  }
+</script>
+
+<script src="js/threeScene.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
