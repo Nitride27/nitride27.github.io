@@ -1,99 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+/* Base setup */
+html {
+  font-size: 16px; /* root size */
+}
+
 body {
   margin: 0;
   background: #05080f;
   color: #fff;
   overflow-x: hidden;
   font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
 }
 
 /* THREE CANVAS */
 #space-canvas {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: -1;
 }
 
 /* PANELS */
 .container {
   display: flex;
-  width: 500vw;
+  flex-direction: row;
+  width: 500vw; /* 5 panels side by side on desktop */
 }
 
-.panel {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  font-size: 28px;
-  text-transform: uppercase;
-  display: block;
-}
-nav {
-  position: fixed;
-  top: 20px;
-  right: 30px;
-  z-index: 10;
-  background: rgba(5, 8, 15, 0.6);
-  padding: 8px 12px;
-  border-radius: 8px;
-  backdrop-filter: blur(6px);
-}
-
-nav a {
-  color: #aaa;
-  margin-left: 16px;
-  text-decoration: none;
-  transition: color 0.3s, text-shadow 0.3s;
-}
-
-nav a:hover {
-  color: #f3efef;
-  text-shadow: 0 0 6px #000000;
-}
-
-
-
-body {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 18px;
-  background: #05080f;
-  color: #fff;
-  margin: 0;
-  overflow-x: hidden;
-}
-
-/* Welcome message (top-left) */
-.welcome {
-  position: fixed;
-  top: 20px;
-  left: 30px;
-  z-index: 20;
-  font-size: 18px;
-  text-shadow: 0 0 10px #fdfdfd;
-}
-
-/* Planet name (top-right) */
-.planet-label {
-  position: absolute;
-  top: 70px;
-  right: 30px;
-  font-size: 28px;
-  color: #fdfdfd;
-  text-shadow: 0 0 8px #fdfdfd;
-}
-
-/* Instructions (bottom-right) */
-.instructions {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  font-size: 20px;
-  color: #4cc9f0;
-  text-shadow: 0 0 6px #4cc9f0;
-}
-
-/* Panel layout */
 .panel {
   position: relative;
   width: 100vw;
@@ -101,29 +37,85 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 64px;
+  font-size: clamp(2rem, 5vw, 4rem); /* fluid scaling */
   text-transform: uppercase;
+  padding: 2rem;
 }
 
+/* NAVIGATION */
+nav {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  z-index: 10;
+  background: rgba(5, 8, 15, 0.6);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+}
+
+nav a {
+  color: #aaa;
+  margin-left: 1rem;
+  text-decoration: none;
+  transition: color 0.3s, text-shadow 0.3s;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+}
+
+nav a:hover {
+  color: #f3efef;
+  text-shadow: 0 0 6px #000000;
+}
+
+/* OVERLAYS */
+.welcome {
+  position: fixed;
+  top: 20px;
+  left: 30px;
+  z-index: 20;
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  text-shadow: 0 0 10px #fdfdfd;
+}
+
+.planet-label {
+  position: absolute;
+  top: 70px;
+  right: 30px;
+  font-size: clamp(1.2rem, 3vw, 1.75rem);
+  color: #fdfdfd;
+  text-shadow: 0 0 8px #fdfdfd;
+}
+
+.instructions {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: #4cc9f0;
+  text-shadow: 0 0 6px #4cc9f0;
+}
+
+/* CAPTAIN PHOTO */
 .captain-photo {
   margin-top: 12px;
-  width: 80px;
-  height: 80px;
+  width: clamp(60px, 10vw, 80px);
+  height: clamp(60px, 10vw, 80px);
   object-fit: cover;
   border-radius: 8px;
   border: 2px solid #fdfdfd;
   box-shadow: 0 0 10px #fdfdfd;
 }
 
+/* AUDIO BUTTON */
 .audio-btn {
   position: fixed;
   bottom: 20px;
   right: 30px;
   background: rgba(76,201,240,0.2);
   border: none;
-  padding: 10px;
+  padding: clamp(8px, 2vw, 12px);
   border-radius: 50%;
-  font-size: 20px;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
   color: #4cc9f0;
   box-shadow: 0 0 12px #4cc9f0;
   cursor: pointer;
@@ -131,4 +123,35 @@ body {
 .audio-btn:hover {
   background: rgba(76,201,240,0.5);
   color: #fff;
+}
+
+/* 📱 MOBILE PORTRAIT FIX */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;   /* stack panels vertically */
+    width: 100vw !important;
+  }
+
+  .panel {
+    width: 100vw;
+    min-height: 100vh;
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    padding: 1.5rem;
+  }
+
+  nav {
+    top: 10px;
+    right: 10px;
+    font-size: 0.9rem;
+  }
+
+  .welcome, .planet-label, .instructions {
+    font-size: clamp(0.8rem, 3vw, 1rem);
+  }
+
+  .audio-btn {
+    bottom: 10px;
+    right: 10px;
+    font-size: 1rem;
+  }
 }
