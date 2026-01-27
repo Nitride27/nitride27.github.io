@@ -18,14 +18,20 @@ body {
 /* PANELS */
 .container {
   display: flex;
+  flex-direction: column;
   width: 500vw;
 }
-
+@media (max-width: 768px) { 
+.container { 
+flex-direction: column; 
+width: 100vw; 
+ }
+  
 .panel {
   position: relative;
   width: 100vw;
-  height: 100vh;
-  font-size: 28px;
+  height: auto;
+  font-size: 24px;
   text-transform: uppercase;
   display: block;
 }
@@ -132,3 +138,4 @@ body {
   background: rgba(76,201,240,0.5);
   color: #fff;
 }
+
