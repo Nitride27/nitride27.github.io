@@ -153,7 +153,7 @@ nav a:hover {
   .planet-label {
     position: static;
     margin-top: 1rem;
-    margin-left: 6rem;
+    margin-left: 3rem;
   }
 
   .spaceship,
@@ -185,4 +185,5 @@ nav a:hover {
     font-size: 1rem;
   }
 }
+
 
