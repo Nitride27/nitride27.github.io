@@ -45,7 +45,7 @@ body {
 /* NAVIGATION */
 nav {
   position: fixed;
-  top: 70px;
+  top: 20px;
   right: 30px;
   z-index: 10;
   background: rgba(5, 8, 15, 0.6);
@@ -88,7 +88,7 @@ nav a:hover {
 
 .instructions {
   position: absolute;
-  bottom: 30px;
+  bottom: 70px;
   right: 30px;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   color: #4cc9f0;
@@ -155,4 +155,5 @@ nav a:hover {
     font-size: 1rem;
   }
 }
+
 
