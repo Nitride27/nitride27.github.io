@@ -141,12 +141,12 @@ nav a:hover {
 /* 📱 Portrait mode fix */
 @media (max-width: 768px) {
   .container {
-    flex-direction: column;
-    width: 100vw !important;
+    flex-direction: row;
+    width: 500vw !important;
   }
 
   .panel {
-    padding: 1.5rem;
+    padding: 2rem;
     font-size: clamp(1.5rem, 6vw, 2.5rem);
   }
 
