@@ -245,3 +245,19 @@ nav a:hover {
   }
 }
 
+@media (max-width: 768px) {
+  .home-btn {
+    top: 60px;
+    right: 20px;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  nav {
+    top: 20px;
+    left: 20px;
+    gap: 12px;
+  }
+}
+
+
