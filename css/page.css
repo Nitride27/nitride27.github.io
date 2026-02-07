@@ -244,6 +244,7 @@ nav a:hover {
     margin: 0 auto;
   }
 }
+
 @media (max-width: 768px) {
   .home-btn {
     top: 60px;
@@ -258,17 +259,5 @@ nav a:hover {
     gap: 12px;
   }
 }
-@media (max-width: 768px) {
-  .home-btn {
-    top: 60px;
-    right: 20px;
-    font-size: 0.9rem;
-    padding: 8px 16px;
-  }
 
-  nav {
-    top: 20px;
-    left: 20px;
-    gap: 12px;
-  }
-}
+
