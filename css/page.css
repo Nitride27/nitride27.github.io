@@ -133,6 +133,15 @@ nav a:hover {
 .project-text {
   flex: 1;
 }
+.project-text h3 a {
+  text-decoration: none;   /* removes underline */
+  color: #fff;             /* keeps text consistent with your theme */
+  transition: color 0.3s;
+}
+
+.project-text h3 a:hover {
+  color: #4cc9f0;          /* glowing hover effect */
+}
 
 /* Contact Icons */
 .icon {
@@ -168,11 +177,26 @@ nav a:hover {
   transform: translateY(-5px);
   box-shadow: 0 0 20px #4cc9f0;
 }
+.contact-grid {
+  display: flex;
+  flex-wrap: wrap;   /* allows wrapping if too many boxes */
+  justify-content: center;
+  gap: 20px;         /* spacing between boxes */
+}
+
+.contact-card {
+  background-color: #222;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  flex: 1 1 150px;   /* makes them equal width and responsive */
+}
 
 .contact-card a {
   color: #fff;
   text-decoration: none;
   transition: color 0.3s;
+
 }
 
 .contact-card a:hover {
