@@ -1,0 +1,274 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+/* =========================
+   COSMIC PAGES STYLES
+   ========================= */
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  color: #fff;
+  background: radial-gradient(circle at 20% 30%, #000000, transparent 40%),
+              radial-gradient(circle at 80% 70%, #000000, transparent 40%),
+              radial-gradient(circle at 50% 50%, #1f637c, transparent 60%),
+              #000;
+  background-attachment: fixed;
+}
+
+/* Navigation Bar */
+nav {
+  position: fixed;
+  top: 1.25rem;
+  left: 2rem;
+  display: flex;
+  gap: 1.25rem;
+  z-index: 100;
+}
+
+nav a {
+  color: #fdfdfd;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #4cc9f0;
+}
+
+/* Home Button */
+.home-btn {
+  position: fixed;
+  top: 1.25rem;
+  right: 2rem;
+  background: rgba(23, 32, 32, 0.2);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  color: #fdfdfd;
+  text-decoration: none;
+  box-shadow: 0 0 12px #4cc9f0;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  transition: background 0.3s;
+}
+.home-btn:hover {
+  background: rgba(76,201,240,0.5);
+  color: #fff;
+}
+
+/* Content Sections */
+.content {
+  max-width: 62.5rem; /* 1000px → rem */
+  margin: 7.5rem auto;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* Hero Section */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: 7.5rem;
+  flex-wrap: wrap; /* allows stacking on smaller screens */
+}
+
+.profile-photo {
+  width: clamp(120px, 20vw, 180px);
+  height: clamp(120px, 20vw, 180px);
+  border-radius: 12px;
+  border: 2px solid #4cc9f0;
+  box-shadow: 0 0 20px #4cc9f0;
+}
+
+.hero-text h1 {
+  font-size: clamp(1.8rem, 4vw, 2.25rem);
+  margin-bottom: 0.6rem;
+}
+
+.tagline {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: #4cc9f0;
+  text-shadow: 0 0 8px #4cc9f0;
+  margin-bottom: 1.25rem;
+}
+
+/* Grids */
+.skills-grid, .project-grid, .cert-grid, .contact-grid, .facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}
+
+/* Cards */
+.skill-card, .project-card, .edu-card, .cert-card, .contact-card, .fact-card {
+  background: rgba(255,255,255,0.05);
+  padding: 1.25rem;
+  border-radius: 10px;
+  text-shadow: 0 0 6px #4cc9f0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.skill-card:hover, .project-card:hover, .edu-card:hover, .cert-card:hover, .contact-card:hover, .fact-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 20px #4cc9f0;
+}
+
+/* Projects Layout */
+.project-card {
+  display: flex;
+  gap: 1.25rem;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.project-img {
+  width: clamp(140px, 25vw, 200px);
+  border-radius: 8px;
+  box-shadow: 0 0 12px #4cc9f0;
+}
+
+.project-text {
+  flex: 1;
+}
+
+/* Contact Icons */
+.icon {
+  width: clamp(32px, 8vw, 50px);
+  margin-right: 0.6rem;
+  vertical-align: middle;
+}
+
+/* Centralized Fact Grid */
+.facts-grid {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 2.5rem auto;
+  max-width: 56.25rem; /* 900px → rem */
+}
+
+.fact-card {
+  flex: 1 1 200px;
+  max-width: 220px;
+  text-align: center;
+  background: rgba(255,255,255,0.05);
+  padding: 1.25rem;
+  border-radius: 10px;
+  text-shadow: 0 0 6px #4cc9f0;
+  box-shadow: 0 0 12px #4cc9f0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fact-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 20px #4cc9f0;
+}
+
+.contact-card a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-card a:hover {
+  color: #4cc9f0;
+}
+
+.edu-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  box-shadow: 0 0 8px #4cc9f0;
+}
+
+/* Footer */
+.footer {
+  align-self: center;
+  text-align: center;
+  padding: 1.25rem;
+  margin-top: 3.75rem;
+  font-size: clamp(0.6rem, 2vw, 0.8rem);
+  color: #aaa;
+  background: rgba(0,0,0,0.4);
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.footer p {
+  margin: 0;
+}
+
+/* 📱 Mobile Portrait Adjustments */
+@media (max-width: 768px) {
+  nav {
+    top: 0.8rem;
+    left: 1rem;
+    gap: 1rem;
+  }
+
+  .home-btn {
+    top: 0.8rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .hero {
+    flex-direction: column;
+    margin-top: 5rem;
+    gap: 1.5rem;
+  }
+
+  .hero-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .tagline {
+    font-size: 1rem;
+  }
+
+  .project-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .project-img {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 768px) {
+  .home-btn {
+    top: 60px;
+    right: 20px;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  nav {
+    top: 20px;
+    left: 20px;
+    gap: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .home-btn {
+    top: 60px;
+    right: 20px;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  nav {
+    top: 20px;
+    left: 20px;
+    gap: 12px;
+  }
+}
