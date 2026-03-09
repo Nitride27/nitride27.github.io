@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact</title>
+  <title>Contact — Samridha Shrestha</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/webp" href="images/Sam.webp">
+  <link rel="apple-touch-icon" href="images/Sam.webp">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
+  <meta property="og:title" content="Contact — Samridha Shrestha">
+  <meta property="og:description"
+    content="Reach out to Samridha Shrestha via email, GitHub, LinkedIn or phone for collaborations and opportunities.">
+  <meta property="og:image" content="images/Samridha.jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Contact — Samridha Shrestha">
+  <meta name="twitter:description"
+    content="Reach out via email, GitHub, LinkedIn or phone for collaborations and opportunities.">
+  <meta name="twitter:image" content="images/Samridha.jpeg">
+
   <link rel="stylesheet" href="css/page.css">
 </head>
+
 <body>
+  <div class="page-overlay"></div>
+
   <nav>
     <a href="introduction.html">Introduction</a>
     <a href="skills.html">Skills</a>
@@ -14,7 +38,7 @@
     <a href="about.html">About</a>
     <a href="contact.html">Contact</a>
   </nav>
-  <a href="index.html" class="home-btn">Home</a>
+  <a href="index.html" class="home-btn">&#8592; Home</a>
 
   <section class="content">
     <h1>Get in Touch</h1>
@@ -23,11 +47,13 @@
     <div class="contact-grid">
       <div class="contact-card">
         <img src="images/phone.png" alt="Phone Icon" class="icon">
-        <p>9818716111, 9748300307</p>
+        <p>9818716111<br>9748300307</p>
       </div>
       <div class="contact-card">
         <img src="images/email.png" alt="Email Icon" class="icon">
-        <p><a href="https://mail.google.com/mail/?view=cm&fs=1&to=samridhashrestha10@gmail.com">samridhashrestha10<br>@gmail.com</a></p>
+        <p><a
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+        </p>
       </div>
       <div class="contact-card">
         <img src="images/github.png" alt="GitHub Icon" class="icon">
@@ -35,15 +61,12 @@
       </div>
       <div class="contact-card">
         <img src="images/linkedln.png" alt="LinkedIn Icon" class="icon">
-        <p><a href="https://www.linkedin.com/in/samridha-shrestha-55415820a/">linkedin.com/in<br>/samridha</a></p>
+        <p><a href="https://www.linkedin.com/in/samridha-shrestha-55415820a/"
+            target="_blank">linkedin.com/in/samridha</a></p>
       </div>
       <div class="contact-card">
         <img src="images/resume_icon.png" alt="Resume Icon" class="icon">
-        <p>
-          <a href="Files/Resume_2026.pdf" target="_blank">
-            Resume
-          </a>
-        </p>
+        <p><a href="Files/Resume_2026.pdf" target="_blank">Resume</a></p>
       </div>
     </div>
   </section>
@@ -51,6 +74,19 @@
   <footer class="footer">
     <p>© 2026 Samridha Shrestha. All rights reserved.</p>
   </footer>
-</body>
-</html>
 
+  <audio id="bg-audio" autoplay loop>
+    <source src="audio/Interstellar.mp3" type="audio/mpeg">
+  </audio>
+  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
+  <script>
+    function toggleAudio() {
+      const audio = document.getElementById("bg-audio");
+      const btn = document.getElementById("audio-btn");
+      audio.muted = !audio.muted;
+      btn.textContent = audio.muted ? "🔇" : "🔊";
+    }
+  </script>
+</body>
+
+</html>

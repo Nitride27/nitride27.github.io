@@ -116,7 +116,7 @@ nav a:hover {
   position: fixed;
   bottom: 70px;
   right: 30px;
-  background: rgba(76,201,240,0.2);
+  background: rgba(76, 201, 240, 0.2);
   border: none;
   padding: clamp(8px, 2vw, 12px);
   border-radius: 50%;
@@ -125,8 +125,9 @@ nav a:hover {
   box-shadow: 0 0 12px #4cc9f0;
   cursor: pointer;
 }
+
 .audio-btn:hover {
-  background: rgba(76,201,240,0.5);
+  background: rgba(76, 201, 240, 0.5);
   color: #fff;
 }
 
@@ -138,7 +139,23 @@ nav a:hover {
   margin: 2rem auto;
 }
 
-/* 📱 Portrait mode fix */
+/* =========================
+   📱 RESPONSIVE — tablet & mobile
+   ========================= */
+
+/* Tablet (≤900px): tighten nav gaps */
+@media (max-width: 900px) {
+  nav {
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  nav a {
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile (≤768px) */
 @media (max-width: 768px) {
   .container {
     flex-direction: row;
@@ -146,14 +163,61 @@ nav a:hover {
   }
 
   .panel {
-    padding: 2rem;
-    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    padding: 4rem 1.25rem 2rem;
+    font-size: clamp(1.2rem, 5vw, 2rem);
   }
 
+  /* Nav: pill stays top-right, wraps if needed */
+  nav {
+    top: 0.6rem;
+    right: 0.75rem;
+    left: auto;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    max-width: calc(100vw - 1.5rem);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  nav a {
+    font-size: clamp(0.6rem, 2.5vw, 0.8rem);
+    white-space: nowrap;
+  }
+
+  /* Welcome: smaller, stays top-left */
+  .welcome {
+    top: 0.6rem;
+    left: 0.75rem;
+    font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  }
+
+  /* Planet label */
   .planet-label {
-    position: static;
-    margin-top: 1rem;
-    margin-left: 3rem;
+    top: 3rem;
+    right: 0.75rem;
+    font-size: clamp(0.7rem, 3vw, 1rem);
+  }
+
+  /* Instructions */
+  .instructions {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  }
+
+  /* Captain photo */
+  .captain-photo {
+    width: clamp(50px, 15vw, 80px);
+    height: clamp(50px, 15vw, 80px);
+  }
+
+  /* Audio btn: bottom-right, clear of instructions */
+  .audio-btn {
+    bottom: 3rem;
+    right: 0.75rem;
+    padding: 8px;
+    font-size: 1rem;
   }
 
   .spaceship,
@@ -161,29 +225,37 @@ nav a:hover {
     max-width: 100%;
     margin: 1rem auto;
   }
+}
+
+/* Small phones (≤480px) */
+@media (max-width: 480px) {
+  nav {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    gap: 0.4rem;
+  }
+
+  nav a {
+    font-size: clamp(0.55rem, 2.8vw, 0.72rem);
+  }
 
   .welcome {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.6rem;
   }
 
-  .instructions {
-    font-size: 0.9rem;
-    margin-top: 2rem;
-  }
-
-  nav {
-    top: 10px;
-    right: 10px;
-    font-size: 0.9rem;
-    gap: 0.75rem;
+  .planet-label {
+    top: 2.5rem;
+    right: 0.5rem;
+    font-size: clamp(0.6rem, 3.5vw, 0.85rem);
   }
 
   .audio-btn {
-    bottom: 10px;
-    right: 10px;
-    font-size: 1rem;
+    bottom: 2.5rem;
+    right: 0.5rem;
+    font-size: 0.9rem;
+    padding: 7px;
   }
 }
-
-

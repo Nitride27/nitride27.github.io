@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Samridha Shrestha</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/webp" href="images/Sam.webp">
+  <link rel="apple-touch-icon" href="images/Sam.webp">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
+  <meta property="og:title" content="Samridha Shrestha — Portfolio">
+  <meta property="og:description"
+    content="Computer Engineering Student passionate about data science and machine learning. Welcome to the spaceship.">
+  <meta property="og:image" content="images/Samridha.jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Samridha Shrestha — Portfolio">
+  <meta name="twitter:description"
+    content="Computer Engineering Student passionate about data science and machine learning.">
+  <meta name="twitter:image" content="images/Samridha.jpeg">
 
   <!-- GSAP -->
   <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
@@ -15,61 +35,61 @@
 
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="index-page">
 
-<nav>
-  <a href="#" data-section="introduction">Introduction</a>
-  <a href="#" data-section="projects">Projects</a>
-  <a href="#" data-section="skills">Skills</a>
-  <a href="#" data-section="about">About</a>
-  <a href="#" data-section="contact">Contact</a>
-</nav>
+  <nav>
+    <a href="#" data-section="introduction">Introduction</a>
+    <a href="#" data-section="projects">Projects</a>
+    <a href="#" data-section="skills">Skills</a>
+    <a href="#" data-section="about">About</a>
+    <a href="#" data-section="contact">Contact</a>
+  </nav>
 
+  <!-- 3D SCENE -->
+  <canvas id="space-canvas"></canvas>
 
+  <!-- HORIZONTAL SECTIONS -->
+  <div class="container">
+    <section class="panel" id="introduction">
+      <div class="welcome">
+        <h1>HI,<br> WELCOME<br> TO THE<br> SPACESHIP<br>THIS IS<br> YOUR CAPTAIN<br> SAMRIDHA<br> SHRESTHA</h1>
+        <img src="images/Sam.webp" alt="Samridha" class="captain-photo">
+      </div>
+      <div class="planet-label">Planet: Introduction</div>
+      <div class="instructions">Scroll to move <br>Click to display</div>
+    </section>
+    <section class="panel" id="projects">
+      <div class="planet-label">Planet: Projects</div>
+    </section>
+    <section class="panel" id="skills">
+      <div class="planet-label">Planet: Skills</div>
+    </section>
+    <section class="panel" id="about">
+      <div class="planet-label">Planet: About</div>
+    </section>
+    <section class="panel" id="contact">
+      <div class="planet-label">Planet: Contact</div>
+    </section>
+  </div>
 
-<!-- 3D SCENE -->
-<canvas id="space-canvas"></canvas>
+  <audio id="bg-audio" autoplay loop>
+    <source src="audio/Interstellar.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
 
-<!-- HORIZONTAL SECTIONS -->
-<!-- HORIZONTAL SECTIONS -->
-<div class="container">
-  <section class="panel" id="introduction">
-    <div class="welcome">
-      <h1>HI,<br> WELCOME<br> TO THE<br> SPACESHIP<br>THIS IS<br> YOUR CAPTAIN<br> SAMRIDHA<br> SHRESTHA</h1>
-      <img src="images/Sam.webp" alt="Samridha" class="captain-photo">
-    </div>
-    <div class="planet-label">Planet: Introduction</div>
-    <div class="instructions">Scroll to move <br>Click to display</div>
-  </section>
-  <section class="panel" id="projects">
-    <div class="planet-label">Planet: Projects</div>
-  </section>
-  <section class="panel" id="skills">
-   <div class="planet-label">Planet: Skills</div>
-  </section>
-  <section class="panel" id="about">
-    <div class="planet-label">Planet: About</div>
-  </section>
-  <section class="panel" id="contact">
-   <div class="planet-label">Planet: Contact</div>
-  </section>
-</div>
+  <script>
+    function toggleAudio() {
+      const audio = document.getElementById("bg-audio");
+      const btn = document.getElementById("audio-btn");
+      audio.muted = !audio.muted;
+      btn.textContent = audio.muted ? "🔇" : "🔊";
+    }
+  </script>
 
-<audio id="bg-audio" autoplay loop>
-  <source src="audio/Interstellar.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
-<button onclick="toggleAudio()" class="audio-btn">🔊</button>
-
-<script>
-  function toggleAudio() {
-    const audio = document.getElementById("bg-audio");
-    audio.muted = !audio.muted;
-  }
-</script>
-
-<script src="js/threeScene.js"></script>
-<script src="js/main.js"></script>
+  <script src="js/threeScene.js"></script>
+  <script src="js/main.js"></script>
 </body>
-</html>
 
+</html>

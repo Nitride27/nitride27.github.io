@@ -1,12 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About</title>
+  <title>About — Samridha Shrestha</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/webp" href="images/Sam.webp">
+  <link rel="apple-touch-icon" href="images/Sam.webp">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
+  <meta property="og:title" content="About — Samridha Shrestha">
+  <meta property="og:description"
+    content="Education at ACEM and St. Xavier's College, certifications in Python and Figma, and interests in music, gaming, sports and anime.">
+  <meta property="og:image" content="images/acem.jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About — Samridha Shrestha">
+  <meta name="twitter:description" content="Education, certifications and personal background of Samridha Shrestha.">
+  <meta name="twitter:image" content="images/acem.jpeg">
+
   <link rel="stylesheet" href="css/page.css">
 </head>
+
 <body>
+  <div class="page-overlay"></div>
+
   <nav>
     <a href="introduction.html">Introduction</a>
     <a href="skills.html">Skills</a>
@@ -14,25 +37,24 @@
     <a href="about.html">About</a>
     <a href="contact.html">Contact</a>
   </nav>
-  <a href="index.html" class="home-btn">Home</a>
+  <a href="index.html" class="home-btn">&#8592; Home</a>
 
- <section class="content">
-  <h2>Education</h2>
-
-  <div class="edu-grid">
-    <div class="edu-card">
-      <img src="images/acem.jpeg" alt="Advanced College of Engineering and Management" class="edu-img">
-      <h3>Advanced College of Engineering and Management</h3>
-      <p>Bachelor in Computer Engineering (2021–Present)</p>
-      <p>Relevant Coursework: Data Mining, Software Engineering, Data Structures & Algorithms, Artificial Intelligence</p>
+  <section class="content">
+    <h2>Education</h2>
+    <div class="edu-grid">
+      <div class="edu-card">
+        <img src="images/acem.jpeg" alt="Advanced College of Engineering and Management" class="edu-img">
+        <h3>Advanced College of Engineering and Management</h3>
+        <p>Bachelor in Computer Engineering (2021–Present)</p>
+        <p>Relevant Coursework: Data Mining, Software Engineering, Data Structures &amp; Algorithms, Artificial
+          Intelligence</p>
+      </div>
+      <div class="edu-card">
+        <img src="images/st.xaviers.jpg" alt="St. Xavier's College" class="edu-img">
+        <h3>St. Xavier's College</h3>
+        <p>Plus Two (2019–2021)</p>
+      </div>
     </div>
-
-    <div class="edu-card">
-      <img src="images/st.xaviers.jpg" alt="St. Xavier’s College" class="edu-img">
-      <h3>St. Xavier’s College</h3>
-      <p>Plus Two (2019–2021)</p>
-    </div>
-  </div>
 
     <h2>Certifications</h2>
     <div class="cert-grid">
@@ -42,7 +64,7 @@
 
     <h2>Beyond Academics</h2>
     <p>
-      Outside of academics, I enjoy exploring music, gaming, sports and anime .
+      Outside of academics, I enjoy exploring music, gaming, sports and anime.
       These interests fuel my imagination and influence my approach to design and technology.
     </p>
   </section>
@@ -50,6 +72,19 @@
   <footer class="footer">
     <p>© 2026 Samridha Shrestha. All rights reserved.</p>
   </footer>
-</body>
-</html>
 
+  <audio id="bg-audio" autoplay loop>
+    <source src="audio/Interstellar.mp3" type="audio/mpeg">
+  </audio>
+  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
+  <script>
+    function toggleAudio() {
+      const audio = document.getElementById("bg-audio");
+      const btn = document.getElementById("audio-btn");
+      audio.muted = !audio.muted;
+      btn.textContent = audio.muted ? "🔇" : "🔊";
+    }
+  </script>
+</body>
+
+</html>
