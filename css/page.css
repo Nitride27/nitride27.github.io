@@ -797,16 +797,21 @@ h2::after {
 
 .contact-card {
   flex: 0 0 auto;
-  width: 165px;
+  width: 190px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  padding: 1.75rem 1rem 1.4rem;
+  padding: 1.75rem 1.1rem 1.4rem;
   border-radius: var(--radius);
   text-align: center;
   backdrop-filter: blur(8px);
   transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
   position: relative;
   overflow: hidden;
+}
+
+/* Email card needs more room for the full address */
+.contact-card.email-card {
+  width: 230px;
 }
 
 .contact-card::after {
@@ -834,9 +839,12 @@ h2::after {
 .contact-card p {
   font-size: clamp(0.72rem, 1.4vw, 0.85rem);
   color: #fdfdfd;
-  line-height: 1.55;
+  line-height: 1.6;
   margin: 0;
-  word-break: break-all;
+  /* only break if truly no other option — prevents mid-word splits */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
   text-shadow: 0 0 6px var(--cyan);
 }
 
@@ -844,7 +852,8 @@ h2::after {
   color: #fdfdfd;
   text-decoration: none;
   transition: color 0.3s;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .contact-card a:hover {
@@ -1114,13 +1123,13 @@ h2::after {
   }
 
   .contact-card {
-    width: clamp(130px, 40vw, 160px);
-    padding: 1.25rem 0.75rem 1rem;
+    width: clamp(150px, 44vw, 190px);
+    padding: 1.25rem 0.85rem 1rem;
   }
 
   .contact-card p,
   .contact-card a {
-    font-size: clamp(0.65rem, 2.2vw, 0.8rem);
+    font-size: clamp(0.68rem, 2.4vw, 0.82rem);
   }
 
   /* --- Audio btn --- */
