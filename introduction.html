@@ -4,86 +4,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Introduction — Samridha Shrestha</title>
-
-  <!-- Favicon -->
+  <title>Introduction · Samridha Shrestha</title>
+  <meta name="description" content="Samridha Shrestha, AI/ML engineer in Kathmandu. Deep learning for geospatial data, RAG and LLM systems, and the web stack to ship them.">
   <link rel="icon" type="image/webp" href="images/Sam.webp">
   <link rel="apple-touch-icon" href="images/Sam.webp">
-
-  <!-- Open Graph -->
-  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
-  <meta property="og:title" content="Samridha Shrestha — Computer Engineering Student">
-  <meta property="og:description"
-    content="Enthusiastic Computer Engineering student passionate about data science and machine learning. Based in Kathmandu, Nepal.">
-  <meta property="og:image" content="images/Samridha.jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:type" content="profile">
+  <meta property="og:site_name" content="Samridha Shrestha">
+  <meta property="og:title" content="Introduction · Samridha Shrestha">
+  <meta property="og:description" content="Samridha Shrestha, AI/ML engineer in Kathmandu. Deep learning for geospatial data, RAG and LLM systems, and the web stack to ship them.">
+  <meta property="og:image" content="https://samridhashrestha.com.np/images/og.jpg">
+  <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Samridha Shrestha — Computer Engineering Student">
-  <meta name="twitter:description"
-    content="Enthusiastic Computer Engineering student passionate about data science and machine learning.">
-  <meta name="twitter:image" content="images/Samridha.jpeg">
+  <meta name="twitter:title" content="Introduction · Samridha Shrestha">
+  <meta name="twitter:description" content="Samridha Shrestha, AI/ML engineer in Kathmandu. Deep learning for geospatial data, RAG and LLM systems, and the web stack to ship them.">
+  <meta name="twitter:image" content="https://samridhashrestha.com.np/images/og.jpg">
 
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
   <link rel="stylesheet" href="css/page.css">
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script defer src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script defer src="js/page.js"></script>
+  <script defer src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script defer src="js/space.js"></script>
+  <script defer src="js/horizon.js"></script>
 </head>
 
-<body>
-  <div class="page-overlay"></div>
+<body data-planet="introduction">
+  <div class="transition-veil"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
 
-  <nav>
-    <a href="introduction.html">Introduction</a>
-    <a href="skills.html">Skills</a>
-    <a href="projects.html">Projects</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
+  <nav class="topbar" aria-label="Main">
+    <a class="home-link" href="index.html"><img src="images/avatar.webp" alt="" width="28" height="28">Samridha Shrestha</a>
+    <div class="links">
+      <a href="introduction.html">Introduction</a>
+      <a href="experience.html">Experience</a>
+      <a href="projects.html">Projects</a>
+      <a href="skills.html">Skills</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
   </nav>
-  <a href="index.html" class="home-btn">&#8592; Home</a>
 
-  <section class="hero">
-    <img src="images/Samridha.jpeg" alt="Profile Photo" class="profile-photo">
-    <div class="hero-text">
-      <h1>Samridha Shrestha</h1>
-      <p class="tagline">Computer Engineering Student | Learning Enthusiast</p>
-      <p>
-        Hi, I am Samridha Shrestha an enthusiastic and passionate student pursuing a Bachelor in Computer Engineering.
-        I am looking forward to my first professional role.
-      </p>
-    </div>
-  </section>
+  <main>
+    <section class="wrap intro-hero">
+      <div>
+        <span class="label">01 / Introduction</span>
+        <h1 class="display" data-split>Samridha<br>Shrestha</h1>
+        <p class="lede" style="margin-top:2rem" data-reveal>AI/ML engineer from Kathmandu. I train deep learning models on
+          geospatial data and build retrieval systems that put language models into real products, along with the web
+          stack that ships them.</p>
+        <div class="btn-row" data-reveal>
+          <a href="projects.html" class="btn solid arrow">See projects</a>
+          <a href="Files/Resume_2026.pdf" class="btn" target="_blank" rel="noopener">Resume (PDF)</a>
+        </div>
+      </div>
+      <div data-reveal>
+        <div class="portrait" data-clip><img src="images/Samridha.jpeg" alt="Samridha Shrestha" data-speed="-0.6"></div>
+        <p class="status"><span class="pulse"></span>AI/ML engineer · intern at Octacore Solutions</p>
+      </div>
+    </section>
 
-  <section class="mission content">
-    <h2>Mission Statement</h2>
-    <p>
-      My goal is to pursue data science and machine learning.
-      I aim to contribute to projects that solve real‑world problems while inspiring curiosity.
-    </p>
-  </section>
+    <section class="wrap" style="padding-top:2rem">
+      <span class="label">In numbers</span>
+      <div class="stat-grid">
+        <div class="stat panel" data-reveal>
+          <small>Landfill suitability model</small>
+          <b data-count="96.97" data-decimals="2">96.97<sup>%</sup></b>
+          <p>Accuracy of the custom U-Net, with 0.92 mean IoU and 0.96 Dice.</p>
+        </div>
+        <div class="stat panel" data-reveal>
+          <small>Flood susceptibility model</small>
+          <b data-count="95">95<sup>%</sup></b>
+          <p>CNN accuracy on Kathmandu Valley data, ahead of the Random Forest baseline.</p>
+        </div>
+        <div class="stat panel" data-reveal>
+          <small>Segmentation architectures compared</small>
+          <b data-count="3">3</b>
+          <p>U-Net, ResU-Net and DeepLabV3, trained and benchmarked on the same geospatial data.</p>
+        </div>
+      </div>
+    </section>
 
-  <section class="facts-grid content">
-    <div class="fact-row">
-      <div class="fact-card">📍 <strong>Location</strong>Kathmandu, Nepal</div>
-      <div class="fact-card">🎓 <strong>Education</strong>Bachelor in Computer Engineering</div>
-      <div class="fact-card">🕹️ <strong>Interests</strong>Music, Gaming, Sports</div>
-    </div>
-  </section>
+    <section class="wrap">
+      <span class="label">Currently</span>
+      <p class="statement" data-scrub-words>Building retrieval chatbots at Octacore. Keyword search and vector search
+        run side by side, a reranker sorts the results, and the customer gets the right product back.</p>
+    </section>
+
+    <section class="wrap" style="padding-top:0">
+      <ul class="rows" data-reveal>
+          <li><span>Based in</span><span>Hattigauda, Kathmandu</span></li>
+          <li><span>Studied</span><span>B.E. Computer Engineering, ACEM, 2021–2026</span></li>
+          <li><span>Focus</span><span>Deep learning, computer vision, RAG and LLM systems</span></li>
+          <li><span>Working at</span><span>Octacore Solutions</span></li>
+          <li><span>Off duty</span><span>Music, gaming, sports, anime</span></li>
+      </ul>
+    </section>
+
+    <a href="experience.html" class="next">
+      <small>Next stop</small>
+      <span>Experience</span>
+    </a>
+  </main>
 
   <footer class="footer">
-    <p>© 2026 Samridha Shrestha. All rights reserved.</p>
+    <div class="meta">
+      <span>© 2026 Samridha Shrestha</span>
+      <a class="text-link" href="mailto:samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+      <button class="term-open" type="button" data-terminal>Captain's log <kbd>`</kbd></button>
+    </div>
+    <pre class="ascii" aria-hidden="true"></pre>
   </footer>
-
-  <audio id="bg-audio" autoplay loop>
-    <source src="audio/Interstellar.mp3" type="audio/mpeg">
-  </audio>
-  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
-  <script>
-    function toggleAudio() {
-      const audio = document.getElementById("bg-audio");
-      const btn = document.getElementById("audio-btn");
-      audio.muted = !audio.muted;
-      btn.textContent = audio.muted ? "🔇" : "🔊";
-    }
-  </script>
 </body>
 
 </html>

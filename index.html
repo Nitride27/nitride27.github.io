@@ -3,93 +3,94 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Samridha Shrestha</title>
+  <title>Samridha Shrestha · AI/ML Engineer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portfolio of Samridha Shrestha, AI/ML engineer in Kathmandu. Fly a ship between six planets to see his work, experience and skills.">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/webp" href="images/Sam.webp">
   <link rel="apple-touch-icon" href="images/Sam.webp">
 
-  <!-- Open Graph -->
-  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
-  <meta property="og:title" content="Samridha Shrestha — Portfolio">
-  <meta property="og:description"
-    content="Computer Engineering Student passionate about data science and machine learning. Welcome to the spaceship.">
-  <meta property="og:image" content="images/Samridha.jpeg">
+  <meta property="og:site_name" content="Samridha Shrestha">
+  <meta property="og:title" content="Samridha Shrestha">
+  <meta property="og:description" content="AI/ML engineer in Kathmandu. Welcome to the spaceship.">
+  <meta property="og:image" content="https://samridhashrestha.com.np/images/og.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Samridha Shrestha — Portfolio">
-  <meta name="twitter:description"
-    content="Computer Engineering Student passionate about data science and machine learning.">
-  <meta name="twitter:image" content="images/Samridha.jpeg">
+  <meta name="twitter:title" content="Samridha Shrestha">
+  <meta name="twitter:description" content="AI/ML engineer in Kathmandu. Welcome to the spaceship.">
+  <meta name="twitter:image" content="https://samridhashrestha.com.np/images/og.jpg">
 
-  <!-- GSAP -->
-  <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-  <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
-  <script src="https://unpkg.com/gsap@3/dist/ScrollToPlugin.min.js"></script>
-
-  <!-- Three.js -->
-  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="images/tex/sky.webp" as="image" type="image/webp" media="(min-width: 700px)">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="css/page.css">
   <link rel="stylesheet" href="css/style.css">
+
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script defer src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script defer src="js/page.js"></script>
+  <script defer src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script defer src="js/space.js"></script>
+  <script defer src="js/threeScene.js"></script>
 </head>
 
 <body class="index-page">
+  <div class="transition-veil"></div>
+  <canvas id="space-canvas" aria-label="A spaceship flying past six planets, one for each page"></canvas>
 
-  <nav>
-    <a href="#" data-section="introduction">Introduction</a>
-    <a href="#" data-section="projects">Projects</a>
-    <a href="#" data-section="skills">Skills</a>
-    <a href="#" data-section="about">About</a>
-    <a href="#" data-section="contact">Contact</a>
+  <nav class="topbar" aria-label="Fly to a planet">
+    <a class="home-link" href="index.html"><img src="images/avatar.webp" alt="" width="28" height="28">Samridha Shrestha</a>
+    <div class="links">
+      <a href="introduction.html" data-goto="0">Introduction</a>
+      <a href="experience.html" data-goto="1">Experience</a>
+      <a href="projects.html" data-goto="2">Projects</a>
+      <a href="skills.html" data-goto="3">Skills</a>
+      <a href="about.html" data-goto="4">About</a>
+      <a href="contact.html" data-goto="5">Contact</a>
+    </div>
   </nav>
 
-  <!-- 3D SCENE -->
-  <canvas id="space-canvas"></canvas>
-
-  <!-- HORIZONTAL SECTIONS -->
-  <div class="container">
-    <section class="panel" id="introduction">
-      <div class="welcome">
-        <h1>HI,<br> WELCOME<br> TO THE<br> SPACESHIP<br>THIS IS<br> YOUR CAPTAIN<br> SAMRIDHA<br> SHRESTHA</h1>
-        <img src="images/Sam.webp" alt="Samridha" class="captain-photo">
+  <section class="welcome">
+    <span class="label">Welcome aboard</span>
+    <h1 class="display" data-split>Hi, welcome to<br>the spaceship.</h1>
+    <div class="captain">
+      <img src="images/avatar.webp" alt="Samridha Shrestha">
+      <div>
+        <span class="label" style="margin:0">Your captain</span>
+        <b>Samridha Shrestha</b>
+        <span>AI/ML engineer · Kathmandu</span>
       </div>
-      <div class="planet-label">Planet: Introduction</div>
-      <div class="instructions">Scroll to move <br>Click to display</div>
-    </section>
-    <section class="panel" id="projects">
-      <div class="planet-label">Planet: Projects</div>
-    </section>
-    <section class="panel" id="skills">
-      <div class="planet-label">Planet: Skills</div>
-    </section>
-    <section class="panel" id="about">
-      <div class="planet-label">Planet: About</div>
-    </section>
-    <section class="panel" id="contact">
-      <div class="planet-label">Planet: Contact</div>
-    </section>
+    </div>
+    <p class="lede">Scroll to fly between the six planets, and click one to land.</p>
+  </section>
+
+  <aside class="planet-panel" aria-live="polite">
+    <span class="label hud-num">01 / 06</span>
+    <h2 class="hud-name">Introduction</h2>
+    <p class="hud-blurb">Who I am and what I'm working on.</p>
+    <button class="btn solid land-btn" type="button">Land on Introduction</button>
+  </aside>
+
+  <nav class="dots" aria-label="Planets">
+    <button type="button" aria-label="Introduction"><span>Introduction</span></button>
+    <button type="button" aria-label="Experience"><span>Experience</span></button>
+    <button type="button" aria-label="Projects"><span>Projects</span></button>
+    <button type="button" aria-label="Skills"><span>Skills</span></button>
+    <button type="button" aria-label="About"><span>About</span></button>
+    <button type="button" aria-label="Contact"><span>Contact</span></button>
+  </nav>
+
+  <div class="readout" aria-hidden="true">
+    <span>Scroll to fly · ← → to jump · ` for the captain's log</span>
+    <span>Distance <b class="hud-dist">0</b> km</span>
   </div>
+  <div class="planet-tip" aria-hidden="true"></div>
 
-  <audio id="bg-audio" autoplay loop>
-    <source src="audio/Interstellar.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
-  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
-
-  <script>
-    function toggleAudio() {
-      const audio = document.getElementById("bg-audio");
-      const btn = document.getElementById("audio-btn");
-      audio.muted = !audio.muted;
-      btn.textContent = audio.muted ? "🔇" : "🔊";
-    }
-  </script>
-
-  <script src="js/threeScene.js"></script>
-  <script src="js/main.js"></script>
+  <div class="scroll-space" aria-hidden="true"></div>
 </body>
 
 </html>

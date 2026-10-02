@@ -1,261 +1,258 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
-html {
-  font-size: 16px;
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  font-family: 'Orbitron', sans-serif;
-  background: #05080f;
-  color: #fff;
-  overflow-x: hidden;
-}
-
-/* Canvas */
+/* Home page only: loaded after page.css */
 #space-canvas {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  display: block;
 }
 
-/* Panel container */
-.container {
-  display: flex;
-  flex-direction: row;
-  width: 500vw;
+.scroll-space {
+  height: 600vh;
 }
 
-/* Individual panel */
-.panel {
-  width: 100vw;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  font-size: clamp(2rem, 6vw, 4rem);
-  text-transform: uppercase;
-  box-sizing: border-box;
-  position: relative;
+.index-page .topbar .links a.on {
+  color: var(--ink);
 }
 
-/* Welcome message */
 .welcome {
   position: fixed;
-  top: 20px;
-  left: 30px;
-  font-size: clamp(1rem, 2vw, 1rem);
-  text-shadow: 0 0 10px #fdfdfd;
-  z-index: 20;
+  top: 50%;
+  left: clamp(1.25rem, 5vw, 5rem);
+  transform: translateY(-55%);
+  z-index: 200;
+  max-width: 40rem;
+  pointer-events: none;
+  transition: opacity .8s var(--ease), transform .8s var(--ease);
 }
 
-/* Planet label */
-.planet-label {
-  position: absolute;
-  top: 70px;
-  right: 35px;
-  font-size: clamp(1rem, 2vw, 2rem);
-  color: #fdfdfd;
-  text-shadow: 0 0 8px #fdfdfd;
+.welcome .display {
+  font-size: clamp(2.6rem, 6.4vw, 5.6rem);
 }
 
-/* Instructions */
-.instructions {
-  position: absolute;
-  bottom: 20px;
-  right: 30px;
-  font-size: clamp(1rem, 2vw, 1rem);
-  color: #4cc9f0;
-  text-shadow: 0 0 6px #4cc9f0;
+.welcome .lede {
+  margin-top: 1.6rem;
+  max-width: 34ch;
 }
 
-/* Navigation */
-nav {
+.welcome.is-gone {
+  opacity: 0;
+  transform: translateY(-62%);
+}
+
+.planet-panel {
   position: fixed;
-  top: 20px;
-  right: 30px;
-  z-index: 10;
-  background: rgba(5, 8, 15, 0.6);
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  backdrop-filter: blur(6px);
+  left: clamp(1.25rem, 5vw, 5rem);
+  bottom: 4.5rem;
+  z-index: 200;
+  max-width: 26rem;
+}
+
+.welcome:not(.is-gone)~.planet-panel> :not(.land-btn) {
+  display: none;
+}
+
+.planet-panel .label {
+  margin-bottom: .8rem;
+}
+
+.planet-panel h2 {
+  font-weight: 300;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+
+.planet-panel .hud-blurb {
+  color: var(--muted);
+  margin: .9rem 0 1.5rem;
+}
+
+.dots {
+  position: fixed;
+  right: 1.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 250;
   display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
-nav a {
-  color: #aaa;
-  text-decoration: none;
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  transition: color 0.3s, text-shadow 0.3s;
-}
-
-nav a:hover {
-  color: #f3efef;
-  text-shadow: 0 0 6px #000000;
-}
-
-/* Captain photo */
-.captain-photo {
-  margin-top: 1rem;
-  width: clamp(60px, 20vw, 100px);
-  height: clamp(60px, 20vw, 100px);
-  object-fit: cover;
-  border-radius: 8px;
-  border: 2px solid #fdfdfd;
-  box-shadow: 0 0 10px #fdfdfd;
-}
-
-/* Audio button */
-.audio-btn {
-  position: fixed;
-  bottom: 70px;
-  right: 30px;
-  background: rgba(76, 201, 240, 0.2);
-  border: none;
-  padding: clamp(8px, 2vw, 12px);
-  border-radius: 50%;
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
-  color: #4cc9f0;
-  box-shadow: 0 0 12px #4cc9f0;
+.dots button {
+  position: relative;
+  width: 2px;
+  height: 18px;
+  padding: 0 8px;
+  box-sizing: content-box;
+  background: var(--faint);
+  background-clip: content-box;
+  border: 0;
   cursor: pointer;
+  transition: height .5s var(--ease), background-color .3s;
 }
 
-.audio-btn:hover {
-  background: rgba(76, 201, 240, 0.5);
-  color: #fff;
+.dots button[aria-current="true"] {
+  height: 40px;
+  background-color: var(--ink);
 }
 
-/* Ship and planet visuals */
-.spaceship,
-.planet {
-  max-width: 80vw;
-  height: auto;
-  margin: 2rem auto;
+.dots button span {
+  position: absolute;
+  right: 1.4rem;
+  top: 50%;
+  transform: translate(6px, -50%);
+  font-family: var(--mono);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s, transform .4s var(--ease);
 }
 
-/* =========================
-   📱 RESPONSIVE — tablet & mobile
-   ========================= */
+.dots button:hover span,
+.dots button:focus-visible span {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
 
-/* Tablet (≤900px): tighten nav gaps */
+.readout {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 1.25rem;
+  z-index: 200;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1.6rem 0 clamp(1.25rem, 5vw, 5rem);
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.readout b {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.planet-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 260;
+  padding: .4rem .8rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: .8rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.planet-tip.show {
+  opacity: 1;
+}
+
+/* clean frame for the 1200x630 social card */
+.og-mode .topbar,
+.og-mode .planet-panel,
+.og-mode .dots,
+.og-mode .readout,
+.og-mode .welcome .lede {
+  display: none;
+}
+
 @media (max-width: 900px) {
-  nav {
-    gap: 0.6rem;
-    padding: 0.4rem 0.6rem;
-  }
-
-  nav a {
-    font-size: 0.85rem;
-  }
-}
-
-/* Mobile (≤768px) */
-@media (max-width: 768px) {
-  .container {
-    flex-direction: row;
-    width: 500vw !important;
-  }
-
-  .panel {
-    padding: 4rem 1.25rem 2rem;
-    font-size: clamp(1.2rem, 5vw, 2rem);
-  }
-
-  /* Nav: pill stays top-right, wraps if needed */
-  nav {
-    top: 0.6rem;
-    right: 0.75rem;
-    left: auto;
-    gap: 0.5rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 8px;
-    max-width: calc(100vw - 1.5rem);
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  nav a {
-    font-size: clamp(0.6rem, 2.5vw, 0.8rem);
-    white-space: nowrap;
-  }
-
-  /* Welcome: smaller, stays top-left */
   .welcome {
-    top: 0.6rem;
-    left: 0.75rem;
-    font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+    top: 6rem;
+    transform: none;
+    right: 1.25rem;
   }
 
-  /* Planet label */
-  .planet-label {
-    top: 3rem;
-    right: 0.75rem;
-    font-size: clamp(0.7rem, 3vw, 1rem);
+  .welcome.is-gone {
+    transform: translateY(-20px);
   }
 
-  /* Instructions */
-  .instructions {
-    bottom: 0.75rem;
-    right: 0.75rem;
-    font-size: clamp(0.65rem, 2.5vw, 0.85rem);
-  }
-
-  /* Captain photo */
-  .captain-photo {
-    width: clamp(50px, 15vw, 80px);
-    height: clamp(50px, 15vw, 80px);
-  }
-
-  /* Audio btn: bottom-right, clear of instructions */
-  .audio-btn {
-    bottom: 3rem;
-    right: 0.75rem;
-    padding: 8px;
+  .welcome .lede {
     font-size: 1rem;
   }
 
-  .spaceship,
-  .planet {
-    max-width: 100%;
-    margin: 1rem auto;
+  .planet-panel {
+    top: 6rem;
+    bottom: auto;
+    right: 1.25rem;
+  }
+
+  .welcome:not(.is-gone)~.planet-panel {
+    display: none;
+  }
+
+  .index-page .topbar {
+    top: auto;
+    bottom: 1rem;
+  }
+
+  .dots,
+  .readout {
+    display: none;
   }
 }
 
-/* Small phones (≤480px) */
-@media (max-width: 480px) {
-  nav {
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.3rem 0.5rem;
-    gap: 0.4rem;
-  }
+/* keep overlay copy readable over the bright Milky Way */
+.welcome,
+.planet-panel,
+.readout {
+  text-shadow: 0 1px 14px rgba(0, 0, 0, .85), 0 0 2px rgba(0, 0, 0, .6);
+}
 
-  nav a {
-    font-size: clamp(0.55rem, 2.8vw, 0.72rem);
-  }
+/* captain card in the greeting */
+.captain {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.8rem;
+  padding: .7rem 1.4rem .7rem .7rem;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, .55);
+  backdrop-filter: blur(10px);
+}
 
-  .welcome {
-    top: 0.5rem;
-    left: 0.5rem;
-    font-size: 0.6rem;
-  }
+.captain img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
-  .planet-label {
-    top: 2.5rem;
-    right: 0.5rem;
-    font-size: clamp(0.6rem, 3.5vw, 0.85rem);
-  }
+.captain b {
+  display: block;
+  font-weight: 400;
+  font-size: 1.15rem;
+  margin: .2rem 0 .1rem;
+}
 
-  .audio-btn {
-    bottom: 2.5rem;
-    right: 0.5rem;
-    font-size: 0.9rem;
-    padding: 7px;
+.captain span:last-child {
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.welcome .captain+.lede {
+  margin-top: 1.2rem;
+}
+
+@media (max-width: 900px) {
+  .captain img {
+    width: 48px;
+    height: 48px;
   }
 }

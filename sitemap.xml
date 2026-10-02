@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
-
-
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
   <loc>https://samridhashrestha.com.np/</loc>
-  <lastmod>2026-03-09T09:21:39+00:00</lastmod>
+  <lastmod>2026-10-02</lastmod>
 </url>
-
-
+<url>
+  <loc>https://samridhashrestha.com.np/introduction.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
+<url>
+  <loc>https://samridhashrestha.com.np/experience.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
+<url>
+  <loc>https://samridhashrestha.com.np/projects.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
+<url>
+  <loc>https://samridhashrestha.com.np/skills.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
+<url>
+  <loc>https://samridhashrestha.com.np/about.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
+<url>
+  <loc>https://samridhashrestha.com.np/contact.html</loc>
+  <lastmod>2026-10-02</lastmod>
+</url>
 </urlset>

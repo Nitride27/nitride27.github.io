@@ -4,90 +4,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact — Samridha Shrestha</title>
-
-  <!-- Favicon -->
+  <title>Contact · Samridha Shrestha</title>
+  <meta name="description" content="Email, phone, GitHub and LinkedIn for Samridha Shrestha.">
   <link rel="icon" type="image/webp" href="images/Sam.webp">
   <link rel="apple-touch-icon" href="images/Sam.webp">
-
-  <!-- Open Graph -->
-  <meta property="og:site_name" content="Samridha Shrestha Portfolio">
-  <meta property="og:title" content="Contact — Samridha Shrestha">
-  <meta property="og:description"
-    content="Reach out to Samridha Shrestha via email, GitHub, LinkedIn or phone for collaborations and opportunities.">
-  <meta property="og:image" content="images/Samridha.jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Samridha Shrestha">
+  <meta property="og:title" content="Contact · Samridha Shrestha">
+  <meta property="og:description" content="Email, phone, GitHub and LinkedIn for Samridha Shrestha.">
+  <meta property="og:image" content="https://samridhashrestha.com.np/images/og.jpg">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Contact — Samridha Shrestha">
-  <meta name="twitter:description"
-    content="Reach out via email, GitHub, LinkedIn or phone for collaborations and opportunities.">
-  <meta name="twitter:image" content="images/Samridha.jpeg">
+  <meta name="twitter:title" content="Contact · Samridha Shrestha">
+  <meta name="twitter:description" content="Email, phone, GitHub and LinkedIn for Samridha Shrestha.">
+  <meta name="twitter:image" content="https://samridhashrestha.com.np/images/og.jpg">
 
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
   <link rel="stylesheet" href="css/page.css">
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script defer src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script defer src="js/page.js"></script>
+  <script defer src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script defer src="js/space.js"></script>
+  <script defer src="js/horizon.js"></script>
 </head>
 
-<body>
-  <div class="page-overlay"></div>
+<body data-planet="contact">
+  <div class="transition-veil"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
 
-  <nav>
-    <a href="introduction.html">Introduction</a>
-    <a href="skills.html">Skills</a>
-    <a href="projects.html">Projects</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-  </nav>
-  <a href="index.html" class="home-btn">&#8592; Home</a>
-
-  <section class="content">
-    <h1>Get in Touch</h1>
-    <p>Feel free to reach out for collaborations, opportunities, or just to connect!</p>
-
-    <div class="contact-grid">
-      <div class="contact-card">
-        <img src="images/phone.png" alt="Phone Icon" class="icon">
-        <p>9818716111<br>9748300307</p>
-      </div>
-      <div class="contact-card email-card">
-        <img src="images/email.png" alt="Email Icon" class="icon">
-        <p><a
-            href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=samridhashrestha10@gmail.com">samridhashrestha10<br>@gmail.com</a>
-        </p>
-      </div>
-      <div class="contact-card">
-        <img src="images/github.png" alt="GitHub Icon" class="icon">
-        <p><a href="https://github.com/Nitride27" target="_blank">GitHub&nbsp;/ Nitride27</a></p>
-      </div>
-      <div class="contact-card">
-        <img src="images/linkedln.png" alt="LinkedIn Icon" class="icon">
-        <p><a href="https://www.linkedin.com/in/samridha-shrestha-55415820a/" target="_blank">LinkedIn&nbsp;/
-            Samridha</a></p>
-      </div>
-      <div class="contact-card">
-        <img src="images/resume_icon.png" alt="Resume Icon" class="icon">
-        <p><a href="Files/Resume_2026.pdf" target="_blank">Resume</a></p>
-      </div>
+  <nav class="topbar" aria-label="Main">
+    <a class="home-link" href="index.html"><img src="images/avatar.webp" alt="" width="28" height="28">Samridha Shrestha</a>
+    <div class="links">
+      <a href="introduction.html">Introduction</a>
+      <a href="experience.html">Experience</a>
+      <a href="projects.html">Projects</a>
+      <a href="skills.html">Skills</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
     </div>
-  </section>
+  </nav>
+
+  <main>
+    <section class="wrap cta">
+      <span class="drift" aria-hidden="true" style="bottom:auto;top:40%">Contact</span>
+      <span class="label">06 / Contact</span>
+      <h1 class="display" data-split>Get in touch</h1>
+      <p class="lede" data-reveal>Open to AI/ML engineering roles, plus freelance work and research
+        collaborations.</p>
+      <p class="ktm" data-reveal>Kathmandu · <b data-ktm-clock>--:--:--</b> · UTC+5:45</p>
+      <div class="btn-row" data-reveal>
+        <a class="btn solid arrow" href="mailto:samridhashrestha10@gmail.com">Email me</a>
+        <button class="btn" type="button" data-copy="samridhashrestha10@gmail.com">Copy address</button>
+      </div>
+
+      <div class="contact-grid">
+        <form class="composer panel" data-reveal novalidate>
+          <h2>Send a transmission</h2>
+          <label>Your name<input name="name" autocomplete="name" required></label>
+          <label>Where to reply (optional)<input name="reply" type="email" autocomplete="email"></label>
+          <label>Message<textarea name="message" rows="5" required></textarea></label>
+          <button class="btn solid arrow" type="submit">Open in my mail app</button>
+        </form>
+        <div class="channels-panel panel" data-reveal>
+          <h2 style="font-weight:300;font-size:1.8rem;letter-spacing:-.02em">Channels</h2>
+          <ul class="rows">
+          <li><a href="mailto:samridhashrestha10@gmail.com"><span>Email</span><span>samridhashrestha10@gmail.com</span></a><button class="copy-btn" type="button" data-copy="samridhashrestha10@gmail.com">Copy</button></li>
+          <li><a href="tel:+9779818716111"><span>Phone</span><span>+977 981-8716111</span></a><button class="copy-btn" type="button" data-copy="+9779818716111">Copy</button></li>
+          <li><a href="tel:+9779748300307"><span>Phone</span><span>+977 974-8300307</span></a><button class="copy-btn" type="button" data-copy="+9779748300307">Copy</button></li>
+          <li><a href="https://github.com/Nitride27" target="_blank" rel="noopener"><span>GitHub</span><span>Nitride27</span></a></li>
+          <li><a href="https://www.linkedin.com/in/samridha-shrestha-55415820a/" target="_blank" rel="noopener"><span>LinkedIn</span><span>Samridha Shrestha</span></a></li>
+          <li><a href="Files/Resume_2026.pdf" target="_blank" rel="noopener"><span>Resume</span><span>PDF, 2026</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <a href="index.html" class="next">
+      <small>Back to</small>
+      <span>Orbit</span>
+    </a>
+  </main>
 
   <footer class="footer">
-    <p>© 2026 Samridha Shrestha. All rights reserved.</p>
+    <div class="meta">
+      <span>© 2026 Samridha Shrestha</span>
+      <a class="text-link" href="mailto:samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+      <button class="term-open" type="button" data-terminal>Captain's log <kbd>`</kbd></button>
+    </div>
+    <pre class="ascii" aria-hidden="true"></pre>
   </footer>
-
-  <audio id="bg-audio" autoplay loop>
-    <source src="audio/Interstellar.mp3" type="audio/mpeg">
-  </audio>
-  <button onclick="toggleAudio()" class="audio-btn" id="audio-btn">🔊</button>
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-  <script>
-    function toggleAudio() {
-      const audio = document.getElementById("bg-audio");
-      const btn = document.getElementById("audio-btn");
-      audio.muted = !audio.muted;
-      btn.textContent = audio.muted ? "🔇" : "🔊";
-    }
-  </script>
 </body>
 
 </html>
