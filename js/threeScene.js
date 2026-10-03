@@ -8,7 +8,7 @@
   const PLANETS = [
     { id: "introduction", name: "Introduction", blurb: "Who I am and what I'm working on.", r: 3.2, type: "ice", accent: "#9cc9dc" },
     { id: "experience", name: "Experience", blurb: "Full-time at Octacore, plus freelance client work.", r: 3.6, type: "terran", accent: "#7fa9dd" },
-    { id: "projects", name: "Projects", blurb: "Deep learning research, RAG systems and shipped products.", r: 3.0, type: "lava", accent: "#e08a5c" },
+    { id: "projects", name: "Projects", blurb: "Deep learning research, apps, live sites and games.", r: 3.0, type: "lava", accent: "#e08a5c" },
     { id: "skills", name: "Skills", blurb: "Languages, frameworks and AI tooling.", r: 4.6, type: "gas", accent: "#d6b289" },
     { id: "about", name: "About", blurb: "Education, certificates and life off the ship.", r: 3.0, type: "desert", accent: "#d48e68" },
     { id: "contact", name: "Contact", blurb: "Email, phone, GitHub and LinkedIn.", r: 3.8, type: "ocean", accent: "#b392f0" },
@@ -17,7 +17,7 @@
   const PEEK = {
     introduction: { stat: ["96.97%", "best model accuracy"], img: "images/Samridha.webp", items: ["Who I am, in one screen", "What I build: ML, RAG, apps", "My Android apps on Google Play"] },
     experience: { stat: ["Since Jun 2026", "software engineer at Octacore"], img: "images/octacore.webp", items: ["Octacore Solutions, full-time", "E-commerce APIs + RAG chatbot", "Aqua Hundred, freelance"] },
-    projects: { stat: ["13", "projects, 4 showcased"], img: "images/LandFill.webp", items: ["Landfill + flood mapping with U-Net / CNN", "Live sites you can scroll through", "Apps, games and sims"] },
+    projects: { stat: ["14", "projects, 7 live"], img: "images/LandFill.webp", items: ["Landfill + flood mapping with U-Net / CNN", "Live sites that scroll on hover", "Apps, games and sims"] },
     skills: { stat: ["35", "tools across 6 families"], img: "", items: ["An orbit of skills to explore", "Every skill linked to real projects", "PyTorch, RAG, Django, Next.js"] },
     about: { stat: ["B.E.", "Computer Engineering, 2026"], img: "images/acem.webp", items: ["ACEM and St. Xavier's", "Certificates", "Life off the ship"] },
     contact: { stat: ["UTC+5:45", "Kathmandu"], img: "", items: ["Send a transmission", "Email, phone, GitHub, LinkedIn", "Copy any address in one click"] },
@@ -170,6 +170,47 @@
     engines.push({ glow, outer, inner });
   });
 
+  // exhaust trail: world-space sparks that stream back from the nozzles and fade (additive, so black = gone)
+  const TRAIL = Space.small ? 90 : 180;
+  const trailPos = new Float32Array(TRAIL * 3), trailCol = new Float32Array(TRAIL * 3), trailVel = new Float32Array(TRAIL * 3), trailLife = new Float32Array(TRAIL);
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3));
+  trailGeo.setAttribute("color", new THREE.BufferAttribute(trailCol, 3));
+  const trail = new THREE.Points(trailGeo, new THREE.PointsMaterial({ size: 0.22, map: softDot, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  trail.frustumCulled = false;
+  scene.add(trail);
+  let trailNext = 0;
+  const nozzle = new THREE.Vector3();
+  const emitTrail = (dt, thrust) => {
+    const n = Math.round((Space.small ? 2 : 3) * Math.min(2, thrust));
+    engines.forEach(e => {
+      e.glow.getWorldPosition(nozzle);
+      for (let k = 0; k < n; k++) {
+        const i = trailNext, j = i * 3;
+        trailNext = (trailNext + 1) % TRAIL;
+        trailPos[j] = nozzle.x + (Math.random() - 0.5) * 0.08; trailPos[j + 1] = nozzle.y + (Math.random() - 0.5) * 0.08; trailPos[j + 2] = nozzle.z;
+        trailVel[j] = (Math.random() - 0.5) * 0.4; trailVel[j + 1] = (Math.random() - 0.5) * 0.4; trailVel[j + 2] = 3 + Math.random() * 2;
+        trailLife[i] = 1;
+      }
+    });
+    for (let i = 0; i < TRAIL; i++) {
+      const j = i * 3, l = trailLife[i] = Math.max(0, trailLife[i] - dt * 1.8);
+      trailPos[j] += trailVel[j] * dt; trailPos[j + 1] += trailVel[j + 1] * dt; trailPos[j + 2] += trailVel[j + 2] * dt;
+      trailCol[j] = 0.35 * l * l; trailCol[j + 1] = 0.65 * l * l; trailCol[j + 2] = 1.0 * l; // blue-white, cooling to nothing
+    }
+    trailGeo.attributes.position.needsUpdate = true;
+    trailGeo.attributes.color.needsUpdate = true;
+  };
+
+  // barrel roll on double-click / double-tap of the ship, or the R key
+  const roll = { z: 0 };
+  let rolling = false;
+  const barrelRoll = () => {
+    if (rolling || reduce || typeof gsap === "undefined") return;
+    rolling = true;
+    gsap.to(roll, { z: roll.z - Math.PI * 2, duration: 1.1, ease: "power2.inOut", onComplete: () => { roll.z = 0; rolling = false; } });
+  };
+
   // ======================
   // STARS + SUN + WARP STREAKS
   // ======================
@@ -280,6 +321,7 @@
     if (e.key === "ArrowRight") { e.preventDefault(); goTo(Math.min(N - 1, current + 1)); }
     if (e.key === "ArrowLeft") { e.preventDefault(); goTo(Math.max(0, current - 1)); }
     if (e.key === "Enter" && document.activeElement === document.body) land(current);
+    if (e.key === "r" || e.key === "R") barrelRoll();
   });
 
   // ======================
@@ -306,17 +348,25 @@
     tip.classList.toggle("show", hovered !== null);
     if (hovered !== null) {
       if (tip.dataset.i !== String(hovered)) fillTip(hovered);
-      // park the card beside the planet's on-screen disc so the planet itself stays visible
+      // park the card on the right of the planet's on-screen disc
       const g = planets[hovered], c = g.getWorldPosition(new THREE.Vector3()), dist = c.distanceTo(camera.getWorldPosition(new THREE.Vector3()));
       const v = c.clone().project(camera), sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
       const rPx = (PLANETS[hovered].r * g.scale.x / dist) * (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       const w = tip.offsetWidth, h = tip.offsetHeight;
-      const x = sx - rPx - w - 28 > 16 ? sx - rPx - w - 28 : Math.min(innerWidth - w - 16, sx + rPx + 28);
+      const x = Math.max(16, Math.min(innerWidth - w - 64, sx + rPx + 28)); // right of the planet, clear of the dot nav
       const y = Math.min(innerHeight - h - 16, Math.max(80, sy - h / 2));
       tip.style.transform = `translate(${x}px, ${y}px)`;
     }
   });
   canvas.addEventListener("click", () => { if (hovered !== null) land(hovered); });
+  const shipParts = [];
+  ship.traverse(o => o.isMesh && shipParts.push(o));
+  let lastTap = 0;
+  canvas.addEventListener("pointerdown", e => {
+    const now = performance.now();
+    ray.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+    if (ray.intersectObjects(shipParts, false).length) { if (now - lastTap < 350) barrelRoll(); lastTap = now; }
+  });
 
   const land = i => {
     if (landing) return;
@@ -372,7 +422,7 @@
     const idle = reduce ? 0 : 1;
     if (!landing) {
       ship.position.set(L.shipX + mouseSmooth.x * 0.5, L.shipY + Math.sin(t * 1.3) * 0.08 * idle + mouseSmooth.y * 0.25, -1);
-      ship.rotation.set(-0.08 + mouseSmooth.y * 0.12, -mouseSmooth.x * 0.18, Math.sin(t * 0.9) * 0.04 * idle - mouseSmooth.x * 0.25 - velocity * 0.05);
+      ship.rotation.set(-0.08 + mouseSmooth.y * 0.12, -mouseSmooth.x * 0.18, Math.sin(t * 0.9) * 0.04 * idle - mouseSmooth.x * 0.25 - velocity * 0.05 + roll.z);
     }
     camera.position.set(mouseSmooth.x * 0.6, 1.4 + mouseSmooth.y * 0.3 + Math.sin(t * 40) * speed * 0.015, 7);
     camera.lookAt(tmp.set(rig.position.x + mouseSmooth.x * 0.8, rig.position.y + 0.4, rig.position.z - 30));
@@ -385,6 +435,7 @@
       e.outer.material.opacity = 0.45 + thrust * 0.25;
       e.glow.scale.setScalar((0.5 + thrust * 0.45) * f);
     });
+    if (!reduce) emitTrail(dt, thrust);
     const blink = Math.sin(t * 3) > 0.85 ? 1 : 0.15;
     wings.forEach(w => (w.userData.halo.material.opacity = blink));
 

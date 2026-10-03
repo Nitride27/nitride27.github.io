@@ -40,6 +40,13 @@
   size();
   addEventListener("resize", size);
 
+  // the view leans toward the pointer (or the phone's tilt, where the browser allows it)
+  const look = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (!reduce) {
+    addEventListener("pointermove", e => { look.tx = e.clientX / innerWidth - 0.5; look.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
+    addEventListener("deviceorientation", e => { if (e.gamma == null) return; look.tx = Math.max(-0.5, Math.min(0.5, e.gamma / 60)); look.ty = Math.max(-0.5, Math.min(0.5, (e.beta - 45) / 90)); }, { passive: true });
+  }
+
   // render only when something moved: scroll easing every frame, slow rotation at ~20fps when idle
   let p = -1, lastRot = 0, dirty = true;
   addEventListener("resize", () => (dirty = true));
@@ -49,7 +56,7 @@
     const target = Math.min(1, scrollY / max);
     if (Math.abs(target - p) > 1e-4) { p = p < 0 || reduce ? target : p + (target - p) * 0.08; dirty = true; }
     const u = planet.userData;
-    if (now - lastRot > 50) { // also picks up textures and fades as they stream in
+    if (now - lastRot > (Space.small ? 100 : 50)) { // idle rotation at 20fps (10 on phones); also picks up textures as they stream in
       const step = Math.min(0.2, (now - lastRot) / 1000);
       lastRot = now;
       if (!reduce) {
@@ -59,11 +66,12 @@
       }
       dirty = true;
     }
+    if (Math.abs(look.tx - look.x) + Math.abs(look.ty - look.y) > 1e-3) { look.x += (look.tx - look.x) * 0.06; look.y += (look.ty - look.y) * 0.06; dirty = true; }
     if (!dirty) return;
     dirty = false;
     const drop = camera.aspect < 0.9 ? 46 : 24; // portrait sees more vertically, so start lower
     planet.position.set(0, -R - drop + p * 15, -R * 0.62);
-    camera.lookAt(0, -3 - p * 1.5, -60);
+    camera.lookAt(look.x * 14, -3 - p * 1.5 - look.y * 6, -60);
     renderer.render(scene, camera);
   };
   requestAnimationFrame(frame);
