@@ -488,3 +488,15 @@ body.booted .welcome-cta { transition-delay: 1.15s; }
 
 .readout { color: var(--muted); text-shadow: 0 1px 3px #000, 0 0 12px #000; }
 .readout b { color: var(--ink); }
+
+/* phones: a quieter welcome; the heading, captain, one line and the start button are enough */
+@media (max-width: 600px) {
+  .welcome > .label, .welcome .captain .label, .brief { display: none; }
+  .welcome { top: 5.5rem; }
+  .captain { margin-top: 1.2rem; padding: .45rem 1rem .45rem .45rem; gap: .75rem; }
+  .captain img { width: 40px; height: 40px; }
+  .captain b { font-size: 1rem; margin: 0; }
+  .captain span:last-child { font-size: .8rem; }
+  .welcome .captain + .lede { margin-top: .9rem; font-size: .92rem; }
+  .welcome-cta { margin-top: 1.2rem; }
+}

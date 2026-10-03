@@ -1,6 +1,8 @@
 // Home page: fly a ship past six procedurally textured planets; click one to land.
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const touch = matchMedia("(hover: none)").matches;
+  const sfx = window.sfx || { play() {}, engine() {} };
   const ogMode = new URLSearchParams(location.search).has("og"); // clean frame for the social preview image
   const $ = s => document.querySelector(s);
   if (ogMode) document.body.classList.add("og-mode");
@@ -208,6 +210,7 @@
   const barrelRoll = () => {
     if (rolling || reduce || typeof gsap === "undefined") return;
     rolling = true;
+    sfx.play("roll");
     gsap.to(roll, { z: roll.z - Math.PI * 2, duration: 1.1, ease: "power2.inOut", onComplete: () => { roll.z = 0; rolling = false; } });
   };
 
@@ -253,7 +256,7 @@
   paintReady.then(() => window.bootDone?.());
   // warp in once the boot screen clears: streaks rush past and the ship flies in from behind the camera
   let intro = 0;
-  addEventListener("boot-done", () => (intro = reduce ? 0 : 1), { once: true });
+  addEventListener("boot-done", () => { intro = reduce ? 0 : 1; sfx.play("warp"); }, { once: true });
 
   // asteroid field scattered along the route, kept clear of the flight line
   const rocks = Space.makeAsteroids(Space.small ? 40 : 70, i => {
@@ -310,6 +313,7 @@
   document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const i = +a.dataset.goto; i === current ? land(i) : goTo(i); }));
   const setCurrent = i => {
     if (i === current) return;
+    if (current >= 0) sfx.play("chime");
     current = i;
     const p = PLANETS[i];
     document.body.style.setProperty("--planet", p.accent);
@@ -348,14 +352,17 @@
     tip.innerHTML = (k.img ? `<div class="tip-img" style="background-image:url(${k.img})"></div>` : "") +
       `<div class="tip-body"><small>${String(i + 1).padStart(2, "0")} / 06 · ${p.type} world</small><b>${p.name}</b>` +
       `<p class="tip-stat"><strong>${k.stat[0]}</strong> ${k.stat[1]}</p><ul>${k.items.map(t => `<li>${t}</li>`).join("")}</ul>` +
-      `<span class="tip-go">Click to land →</span></div>`;
+      `<span class="tip-go">${touch ? "Tap" : "Click"} to land →</span></div>`;
   };
   let hovered = null;
   addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return; // a finger dragging to scroll isn't hovering
     mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(mouse, camera);
     const hit = ray.intersectObjects(pickables, false)[0];
+    const was = hovered;
     hovered = hit ? hit.object.userData.index : null;
+    if (hovered !== null && hovered !== was) sfx.play("hover");
     document.body.style.cursor = hovered !== null ? "pointer" : "";
     tip.classList.toggle("show", hovered !== null);
     if (hovered !== null) {
@@ -370,7 +377,22 @@
       tip.style.transform = `translate(${x}px, ${y}px)`;
     }
   });
-  canvas.addEventListener("click", () => { if (hovered !== null) land(hovered); });
+  // aim the ray where the click or tap landed: taps never send a pointermove first, so hover state can't be trusted
+  const pick = e => {
+    ray.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+    const hit = ray.intersectObjects(pickables, false)[0];
+    return hit ? hit.object.userData.index : null;
+  };
+  canvas.addEventListener("click", e => { const i = pick(e); if (i !== null) land(i); });
+  // phones: the ship and camera lean with the phone's tilt, as the mouse does on desktop
+  if (touch && !reduce) addEventListener("deviceorientation", e => {
+    if (e.gamma == null) return;
+    mouse.set(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, -(e.beta - 50) / 40)));
+  }, { passive: true });
+  if (touch) {
+    $(".welcome .lede").textContent = "Swipe to fly between the six planets, and tap one to land.";
+    $(".readout span").textContent = "Swipe to fly · tap a planet to land · double-tap the ship to roll";
+  }
   const shipParts = [];
   ship.traverse(o => o.isMesh && shipParts.push(o));
   let lastTap = 0;
@@ -385,6 +407,7 @@
     landing = true;
     const g = planets[i], p = PLANETS[i];
     tip.classList.remove("show");
+    sfx.play("descend");
     const href = p.id + ".html";
     const go = () => (window.leaveTo ? leaveTo(href) : (location.href = href));
     if (reduce || typeof gsap === "undefined") return go();
@@ -442,6 +465,7 @@
     camera.lookAt(tmp.set(rig.position.x + mouseSmooth.x * 0.8, rig.position.y + 0.4, rig.position.z - 30));
 
     const thrust = landing ? 1.6 : 0.3 + speed * 0.6;
+    sfx.engine(Math.min(1, 0.06 + speed * 0.6 + (landing ? 0.6 : 0)));
     engines.forEach(e => {
       const f = 1 + Math.sin(t * 50 + e.glow.id) * 0.06 * idle;
       e.outer.scale.set(f, 0.6 + thrust * 1.1, f);

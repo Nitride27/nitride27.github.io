@@ -57,7 +57,7 @@
     document.body.appendChild(menu);
     bar.appendChild(mbtn);
     const setMenu = open => { document.body.classList.toggle("menu-open", open); mbtn.setAttribute("aria-expanded", String(open)); window.lenis?.[open ? "stop" : "start"](); };
-    mbtn.addEventListener("click", () => setMenu(!document.body.classList.contains("menu-open")));
+    mbtn.addEventListener("click", () => { const open = !document.body.classList.contains("menu-open"); setMenu(open); window.sfx?.play(open ? "open" : "close"); });
     // hand the click to the real link so the home page still flies and subpages still launch
     $$("a", menu).forEach((a, i) => a.addEventListener("click", e => { e.preventDefault(); setMenu(false); originals[i].click(); }));
     addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
@@ -101,6 +101,7 @@
     muted = m;
     store(() => localStorage.setItem("audio-muted", m ? "1" : "0"));
     m ? audio.pause() : tryPlay();
+    quiet();
     sync();
   };
   btn.addEventListener("click", e => { e.stopPropagation(); setMuted(!(muted || audio.paused)); });
@@ -113,29 +114,108 @@
     audio.play().then(() => GESTURES.forEach(e => removeEventListener(e, unlock, true)), () => {});
   };
   GESTURES.forEach(e => addEventListener(e, unlock, true));
+  GESTURES.forEach(e => addEventListener(e, () => wake(), true)); // wake the effects too (touch only counts on touchend)
   setTimeout(sync, 1500); // after the arrival veil lifts
   const saveTime = () => store(() => sessionStorage.setItem("audio-time", audio.currentTime));
   addEventListener("pagehide", saveTime);
 
-  // engine whoosh, synthesised so there's no extra file to load
-  const whoosh = () => {
-    if (muted || reduce) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const ctx = new AC(), t = ctx.currentTime, len = 0.9;
-    const buf = ctx.createBuffer(1, ctx.sampleRate * len, ctx.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-    src.buffer = buf;
-    f.type = "bandpass"; f.Q.value = 0.9;
-    f.frequency.setValueAtTime(180, t);
-    f.frequency.exponentialRampToValueAtTime(2600, t + len * 0.75);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.28, t + 0.3);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-    src.connect(f).connect(g).connect(ctx.destination);
-    src.start();
+  // ---------- sound effects: synthesised on one shared context (no files), silent while the music is muted ----------
+  let actx = null, master = null, noiseBuf = null, eng = null;
+  // the context is only created and resumed inside a click, tap or key press, so the browser never blocks it
+  const wake = () => {
+    if (muted) return;
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+      master = actx.createGain();
+      master.gain.value = 0.6;
+      master.connect(actx.destination);
+      noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (actx.state === "suspended" && !document.hidden) actx.resume().catch(() => {});
   };
+  const ac = () => (!muted && actx?.state === "running" ? actx : null); // before the first gesture: drop the sound rather than queue a burst
+  const env = (c, t, vol, attack, dur) => {
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(master);
+    return g;
+  };
+  const tone = (freq, dur, { type = "sine", vol = 0.1, to, delay = 0, attack = 0.008 } = {}) => {
+    const c = ac(); if (!c) return;
+    const t = c.currentTime + delay, o = c.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    o.connect(env(c, t, vol, attack, dur));
+    o.start(t); o.stop(t + dur + 0.05);
+  };
+  const hiss = (dur, { from = 180, to = 2600, vol = 0.25, q = 0.9, attack = 0.3, delay = 0 } = {}) => {
+    const c = ac(); if (!c) return;
+    const t = c.currentTime + delay, src = c.createBufferSource(), f = c.createBiquadFilter();
+    src.buffer = noiseBuf;
+    f.type = "bandpass"; f.Q.value = q;
+    f.frequency.setValueAtTime(from, t);
+    f.frequency.exponentialRampToValueAtTime(to, t + dur * 0.8);
+    src.connect(f).connect(env(c, t, vol, attack, dur));
+    src.start(t, Math.random()); src.stop(t + dur + 0.05);
+  };
+  const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
+  const buzz = ms => haptic && !muted && navigator.userActivation?.hasBeenActive && navigator.vibrate(ms);
+  const SOUNDS = {
+    tick: () => tone(2200, 0.03, { type: "square", vol: 0.018 }),
+    press: () => tone(900, 0.09, { type: "triangle", vol: 0.07, to: 520 }),
+    blip: () => tone(1100 + Math.random() * 500, 0.045, { type: "square", vol: 0.02 }),
+    hover: () => tone(1500, 0.12, { vol: 0.035, to: 1900 }),
+    chime: () => { tone(660, 0.5, { vol: 0.06 }); tone(990, 0.7, { vol: 0.045, delay: 0.09 }); buzz(8); },
+    ok: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: "triangle", vol: 0.06, delay: i * 0.08 })); buzz([15, 40, 15]); },
+    whoosh: () => hiss(0.9),
+    descend: () => { hiss(1.1, { from: 2400, to: 160, vol: 0.22, attack: 0.15 }); tone(320, 1, { type: "sawtooth", vol: 0.025, to: 70 }); buzz(20); },
+    warp: () => { hiss(1.9, { from: 120, to: 4200, vol: 0.3, attack: 1.1 }); tone(55, 1.9, { type: "sawtooth", vol: 0.04, to: 220, attack: 1 }); },
+    roll: () => hiss(1.1, { from: 300, to: 1400, vol: 0.16, q: 2, attack: 0.5 }),
+    thud: () => { tone(110, 0.4, { vol: 0.28, to: 38 }); hiss(0.45, { from: 400, to: 90, vol: 0.18, attack: 0.01 }); buzz(30); },
+    boom: () => { hiss(1.2, { from: 900, to: 50, vol: 0.4, attack: 0.01, q: 0.6 }); tone(80, 0.9, { vol: 0.3, to: 28 }); buzz([60, 30, 90]); },
+    open: () => hiss(0.35, { from: 600, to: 2400, vol: 0.08, q: 3, attack: 0.05 }),
+    close: () => hiss(0.3, { from: 2400, to: 600, vol: 0.07, q: 3, attack: 0.05 }),
+  };
+  // engine: a continuous low rumble whose loudness and pitch follow the throttle (0..1); call it every frame
+  const engine = level => {
+    if (!eng) {
+      const c = ac(); if (!c) return;
+      const src = c.createBufferSource(), f = c.createBiquadFilter(), o = c.createOscillator(), og = c.createGain(), g = c.createGain();
+      src.buffer = noiseBuf; src.loop = true;
+      f.type = "lowpass"; f.frequency.value = 200; f.Q.value = 4;
+      o.type = "sawtooth"; o.frequency.value = 42; og.gain.value = 0.12;
+      g.gain.value = 0;
+      src.connect(f).connect(g); o.connect(og).connect(f);
+      g.connect(master);
+      src.start(); o.start();
+      eng = { f, o, g };
+    }
+    const t = actx.currentTime, l = Math.max(0, Math.min(1, level));
+    eng.g.gain.setTargetAtTime(l * 0.22, t, 0.12);
+    eng.f.frequency.setTargetAtTime(160 + l * 900, t, 0.12);
+    eng.o.frequency.setTargetAtTime(38 + l * 40, t, 0.12);
+  };
+  window.sfx = { play: name => { if (!reduce || name !== "warp") SOUNDS[name]?.(); }, engine };
+  const whoosh = () => !reduce && SOUNDS.whoosh();
+  // silence everything with the music button, and while the tab is hidden
+  const quiet = () => actx && (muted || document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
+  document.addEventListener("visibilitychange", quiet);
+  // UI feedback: a soft press on buttons and links, a tick when a pointer finds one
+  addEventListener("pointerdown", e => e.target.closest?.("a, button, [role=button], .ascii") && SOUNDS.press(), true);
+  addEventListener("pointerover", e => {
+    if (e.pointerType !== "mouse") return;
+    const el = e.target.closest?.("a, button");
+    if (el && !el.contains(e.relatedTarget)) SOUNDS.tick();
+  }, true);
+  // phones: ask for motion access once (iOS), so the scenes can lean with the phone's tilt
+  addEventListener("touchend", () => { try { DeviceOrientationEvent?.requestPermission?.().catch(() => {}); } catch {} }, { once: true });
 
   // ---------- home: pre-flight boot screen, driven by the 3D scene's real loading progress ----------
   const boot = $(".boot");
@@ -158,6 +238,7 @@
       li.innerHTML = `<span></span><em>${ok ? "OK" : "··"}</em>`;
       li.firstChild.textContent = txt;
       log.appendChild(li);
+      window.sfx?.play("blip");
       while (log.children.length > 6) log.firstChild.remove();
     };
     line("Hull integrity");
@@ -201,7 +282,8 @@
     store(() => sessionStorage.setItem("landed", "1"));
     const dur = quick ? 950 : 1500;
     veil.style.setProperty("--vd", dur + 100 + "ms");
-    countAlt(12000, 0, dur, () => { vTop.textContent = "Touchdown"; setTimeout(ready, quick ? 220 : 380); });
+    window.sfx.play("descend");
+    countAlt(12000, 0, dur, () => { vTop.textContent = "Touchdown"; window.sfx.play("thud"); setTimeout(ready, quick ? 220 : 380); });
   } else requestAnimationFrame(ready);
   addEventListener("pageshow", e => { if (e.persisted) document.body.classList.remove("is-leaving"); });
 
@@ -238,7 +320,7 @@
     clearTimeout(t._t);
     t._t = setTimeout(() => t.classList.remove("show"), 2200);
   };
-  const copy = text => navigator.clipboard?.writeText(text).then(() => toast("Copied " + text), () => toast(text));
+  const copy = text => navigator.clipboard?.writeText(text).then(() => { toast("Copied " + text); window.sfx.play("chime"); }, () => toast(text));
   $$("[data-copy]").forEach(el => el.addEventListener("click", () => copy(el.dataset.copy)));
 
   $$(".filters button").forEach(b => b.addEventListener("click", () => {
@@ -312,10 +394,12 @@
     if (res) print(res);
   });
   input.addEventListener("keydown", e => {
+    window.sfx.play(e.key === "Enter" ? "press" : "blip");
     if (e.key === "ArrowUp" && hIdx > 0) { input.value = history[--hIdx]; e.preventDefault(); }
     if (e.key === "ArrowDown") { input.value = history[++hIdx] || ""; hIdx = Math.min(hIdx, history.length); e.preventDefault(); }
   });
   const toggleTerm = (open = !term.classList.contains("open")) => {
+    if (open !== term.classList.contains("open")) window.sfx.play(open ? "open" : "close");
     term.classList.toggle("open", open);
     if (open) {
       if (!out.textContent) print("Captain's log, stardate " + new Date().toISOString().slice(0, 10) + ". Type help.");
@@ -456,11 +540,13 @@
         const pts = Math.round((100 + Math.max(0, g.fuel) * 3 + (SAFE_V - g.vy) * 1500) * level);
         score += pts;
         g.over = "land";
+        window.sfx.play("ok");
         g.msg = `TOUCHDOWN +${pts}. Level ${level + 1} incoming...`;
         collect("lander");
         setTimeout(() => game && game.over === "land" && nextLevel(), 1800);
       } else {
         g.over = "crash";
+        window.sfx.play("boom");
         g.msg = !onPad ? "CRASHED off the pad." : g.vy >= SAFE_V ? "CRASHED: too fast. Burn earlier." : "CRASHED: sliding sideways.";
         if (score > best()) { store(() => localStorage.setItem("lander-best", score)); toast(`New best: ${score}`); }
         g.msg += ` Score ${score}.`;
@@ -501,9 +587,10 @@
       '<div class="lander-pad"><button type="button" data-k="left" aria-label="Steer left">◀</button><button type="button" data-k="up" aria-label="Thrust">▲</button><button type="button" data-k="right" aria-label="Steer right">▶</button></div>';
     ascii.before(ui);
     // phones: the pad sits under the art (in the page flow) so it never covers the game
-    ascii.after($(".lander-pad", ui));
-    $(".lander-exit", ui).addEventListener("click", () => { game = null; keys = {}; padX = cols / 2; padHalf = 9; terrain(); ui.hidden = true; draw(performance.now()); });
-    $$(".lander-pad button", ui).forEach(b => {
+    const pad = $(".lander-pad", ui);
+    ascii.after(pad);
+    $(".lander-exit", ui).addEventListener("click", () => { window.sfx.engine(0); game = null; keys = {}; padX = cols / 2; padHalf = 9; terrain(); ui.hidden = true; draw(performance.now()); });
+    $$("button", pad).forEach(b => {
       const k = b.dataset.k, on = e => { e.preventDefault(); keys[k] = true; }, off = () => (keys[k] = false);
       b.addEventListener("pointerdown", on);
       ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, off));
@@ -531,7 +618,10 @@
     let visible = false, last = 0, lastStep = 0, raf = 0;
     const loop = now => {
       raf = 0;
-      if (game && now - lastStep > 50) { step(); lastStep = now; }
+      if (game && now - lastStep > 50) {
+        step(); lastStep = now;
+        window.sfx.engine(game.over || game.fuel <= 0 ? 0 : (game.firing ? 0.75 : 0) + (keys.left || keys.right ? 0.3 : 0));
+      }
       if (visible && (game ? now - last > 50 : now - last > 120)) { draw(now); last = now; }
       if ((visible && !reduce) || (game && !game.over) || game?.over === "land") raf = requestAnimationFrame(loop);
     };
@@ -801,6 +891,7 @@
     have.add(id);
     store(() => localStorage.setItem("fragments", JSON.stringify([...have])));
     showFrags();
+    window.sfx.play("ok");
     toast(have.size === FRAGS.length ? "All fragments found! Type badge in the captain's log." : `Star fragment found · ${have.size} / ${FRAGS.length}`);
   };
   const pageId = here.replace(".html", "");
