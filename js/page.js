@@ -168,11 +168,11 @@
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
   // engine rev: two detuned oscillators driven into a soft-clip curve, the filter opening as the revs climb
   let drive = null;
+  const clip = () => drive || (drive = new Float32Array(1024).map((_, i) => Math.tanh((i / 512 - 1) * 6)));
   const rev = () => {
     const c = ac(); if (!c) return;
-    if (!drive) { drive = new Float32Array(1024).map((_, i) => Math.tanh((i / 512 - 1) * 6)); }
     const t = c.currentTime, dur = 1.4, sh = c.createWaveShaper(), f = c.createBiquadFilter();
-    sh.curve = drive;
+    sh.curve = clip();
     f.type = "lowpass"; f.Q.value = 3;
     f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(2400, t + 0.4); f.frequency.exponentialRampToValueAtTime(320, t + dur);
     [["sawtooth", 1], ["square", 1.012]].forEach(([type, k]) => {
@@ -189,7 +189,7 @@
     tick: () => tone(2400, 0.035, { type: "square", vol: 0.04 }),
     press: () => tone(900, 0.1, { type: "triangle", vol: 0.16, to: 520 }),
     blip: () => tone(1100 + Math.random() * 500, 0.05, { type: "square", vol: 0.05 }),
-    hover: () => tone(1500, 0.14, { vol: 0.08, to: 1900 }),
+    hover: () => swoosh(0.45, 0.12),
     coin: () => { tone(1568, 0.12, { type: "triangle", vol: 0.1 }); tone(2093, 0.25, { type: "triangle", vol: 0.09, delay: 0.06 }); },
     rev: () => { rev(); buzz(30); },
     queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
@@ -197,7 +197,8 @@
     powerup: () => { tone(110, 1, { type: "sawtooth", vol: 0.07, to: 880, attack: 0.8 }); hiss(1, { from: 200, to: 5000, vol: 0.2, attack: 0.9 }); },
     chime: () => { tone(660, 0.5, { vol: 0.12 }); tone(990, 0.7, { vol: 0.09, delay: 0.09 }); buzz(8); },
     ok: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: "triangle", vol: 0.12, delay: i * 0.08 })); buzz([15, 40, 15]); },
-    whoosh: () => hiss(0.9),
+    whoosh: () => swoosh(1, 0.4),
+    swoosh: () => swoosh(1.3, 0.45),
     descend: () => { hiss(1.1, { from: 2400, to: 160, vol: 0.22, attack: 0.15 }); tone(320, 1, { type: "sawtooth", vol: 0.025, to: 70 }); buzz(20); },
     warp: () => { hiss(1.9, { from: 120, to: 4200, vol: 0.3, attack: 1.1 }); tone(55, 1.9, { type: "sawtooth", vol: 0.04, to: 220, attack: 1 }); },
     roll: () => hiss(1.1, { from: 300, to: 1400, vol: 0.16, q: 2, attack: 0.5 }),
@@ -206,24 +207,47 @@
     open: () => hiss(0.35, { from: 600, to: 2400, vol: 0.08, q: 3, attack: 0.05 }),
     close: () => hiss(0.3, { from: 2400, to: 600, vol: 0.07, q: 3, attack: 0.05 }),
   };
-  // engine: a continuous low rumble whose loudness and pitch follow the throttle (0..1); call it every frame
+  // engine: a throaty, throbbing drive. Two detuned saws and a sub-octave square, plus a little noise, are pushed
+  // through a soft clip; a tremolo that speeds up with the throttle gives the hammering. Call it every frame with 0..1
   const engine = level => {
     if (!eng) {
       const c = ac(); if (!c) return;
-      const src = c.createBufferSource(), f = c.createBiquadFilter(), o = c.createOscillator(), og = c.createGain(), g = c.createGain();
-      src.buffer = noiseBuf; src.loop = true;
-      f.type = "lowpass"; f.frequency.value = 200; f.Q.value = 4;
-      o.type = "sawtooth"; o.frequency.value = 42; og.gain.value = 0.12;
+      const mk = (type, mul) => { const o = c.createOscillator(); o.type = type; o.start(); return [o, mul]; };
+      const oscs = [mk("sawtooth", 1), mk("sawtooth", 1.007), mk("square", 0.5)];
+      const noise = c.createBufferSource(), ng = c.createGain(), sh = c.createWaveShaper(), f = c.createBiquadFilter();
+      const trem = c.createGain(), lfo = c.createOscillator(), depth = c.createGain(), g = c.createGain();
+      noise.buffer = noiseBuf; noise.loop = true; ng.gain.value = 0.25; noise.start();
+      sh.curve = clip();
+      f.type = "lowpass"; f.Q.value = 2.5;
+      trem.gain.value = 0.7; depth.gain.value = 0.3; lfo.frequency.value = 7; lfo.start();
+      lfo.connect(depth).connect(trem.gain);
+      oscs.forEach(([o]) => o.connect(sh)); noise.connect(ng).connect(sh);
+      sh.connect(f).connect(trem).connect(g).connect(master);
       g.gain.value = 0;
-      src.connect(f).connect(g); o.connect(og).connect(f);
-      g.connect(master);
-      src.start(); o.start();
-      eng = { f, o, g };
+      eng = { oscs, f, g, lfo };
     }
-    const t = actx.currentTime, l = Math.max(0, Math.min(1, level));
-    eng.g.gain.setTargetAtTime(l * 0.22, t, 0.12);
-    eng.f.frequency.setTargetAtTime(160 + l * 900, t, 0.12);
-    eng.o.frequency.setTargetAtTime(38 + l * 40, t, 0.12);
+    const t = actx.currentTime, l = Math.max(0, Math.min(1, level)), base = 34 + l * 70;
+    eng.g.gain.setTargetAtTime(l > 0.02 ? 0.05 + l * 0.3 : 0, t, 0.15);
+    eng.f.frequency.setTargetAtTime(220 + l * 1600, t, 0.15);
+    eng.lfo.frequency.setTargetAtTime(6 + l * 16, t, 0.15);
+    eng.oscs.forEach(([o, mul]) => o.frequency.setTargetAtTime(base * mul, t, 0.15));
+  };
+  // swoosh: a wide band of air that sweeps up and back down while it pans across, like something passing close by
+  const swoosh = (dur = 1.2, vol = 0.4) => {
+    const c = ac(); if (!c) return;
+    const t = c.currentTime, src = c.createBufferSource(), f = c.createBiquadFilter(), lo = c.createBiquadFilter();
+    src.buffer = noiseBuf;
+    f.type = "bandpass"; f.Q.value = 1.1;
+    f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(3200, t + dur * 0.45); f.frequency.exponentialRampToValueAtTime(500, t + dur);
+    lo.type = "lowpass"; lo.frequency.value = 5000;
+    let out = src.connect(f).connect(lo);
+    if (c.createStereoPanner) {
+      const pan = c.createStereoPanner();
+      pan.pan.setValueAtTime(-0.9, t); pan.pan.linearRampToValueAtTime(0.9, t + dur);
+      out = out.connect(pan);
+    }
+    out.connect(env(c, t, vol, dur * 0.4, dur));
+    src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   // a plucked string (Karplus-Strong): a burst of noise fed through a short, slowly damped delay line
   const pluck = (freq, vol = 0.35) => {
@@ -845,130 +869,267 @@
     toast("Opening your mail app…");
   });
 
-  // ---------- last hit: farm a minion lane on Summoner's Rift. Your minions wear the enemy wave down;
-  // click one when its health is below your attack damage to take the gold. 60 seconds. ----------
+  // ---------- last hit: a minion lane on Summoner's Rift. Blue and red waves meet and fight for real; you only
+  // get the gold if your hit is the one that kills. Click a minion to auto-attack, Q (or the Q button) for a
+  // skillshot down the lane. 75 seconds, graded on the share of the wave you took. ----------
   let playing = false;
   const startGame = () => {
     if (playing) return;
     playing = true;
     window.lenis?.stop();
-    const cv = document.createElement("canvas"), hud = document.createElement("div"), exit = document.createElement("button");
-    cv.className = "play-canvas"; hud.className = "play-hud";
+    const cv = document.createElement("canvas"), hud = document.createElement("div"), exit = document.createElement("button"), qBtn = document.createElement("button");
+    cv.className = "play-canvas lh-canvas"; hud.className = "play-hud";
     exit.className = "play-exit"; exit.type = "button"; exit.innerHTML = "<span aria-hidden=\"true\">✕</span> Exit game";
-    document.body.append(cv, hud, exit);
+    qBtn.className = "lh-q"; qBtn.type = "button"; qBtn.innerHTML = "Q<small>Mystic shot</small>"; qBtn.setAttribute("aria-label", "Cast Q, a skillshot down the lane");
+    document.body.append(cv, hud, exit, qBtn);
     const g = cv.getContext("2d"), dpr = Math.min(devicePixelRatio, 2);
-    const size = () => { cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    let W = 0, H = 0;
+    const size = () => { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
     size(); addEventListener("resize", size);
-    const GOLD = "#c8aa6e", TEAL = "#0ac8b9", AD = 55, CD = 850, ROUND = 60;
-    const KINDS = { melee: { hp: 170, r: 15, gold: 21 }, caster: { hp: 120, r: 12, gold: 14 }, cannon: { hp: 360, r: 20, gold: 60 } };
+    const GOLD = "#c8aa6e", TEAL = "#0ac8b9", BLUE = "#3d8bff", RED = "#d8443a";
+    const AD = 62, AA_CD = 0.9, Q_DMG = 95, Q_CD = 5, ROUND = 75, WAVE_EVERY = 13;
+    const KIND = {
+      melee: { hp: 200, dmg: 15, range: 30, rate: 1.1, r: 14, gold: 21 },
+      caster: { hp: 130, dmg: 20, range: 150, rate: 1.5, r: 11, gold: 14 },
+      cannon: { hp: 420, dmg: 34, range: 190, rate: 2.0, r: 19, gold: 60 },
+    };
     const bestKey = "lasthit-best", best = () => +(store(() => localStorage.getItem(bestKey)) || 0);
-    let mins = [], bolts = [], texts = [], cs = 0, gold = 0, missed = 0, wave = 0, waveAt = 0, readyAt = 0, t0 = performance.now(), over = false, raf;
-    const lane = () => ({ y: innerHeight * 0.55, champ: { x: Math.max(60, innerWidth * 0.1), y: innerHeight * 0.55 } });
-    const spawnWave = now => {
-      wave++;
-      const list = ["melee", "melee", "melee", "caster", "caster", "caster"];
-      if (wave % 3 === 0) list.splice(3, 0, "cannon");
-      list.forEach((k, i) => {
-        const K = KINDS[k], row = i % 3;
-        mins.push({ k, hp: K.hp, max: K.hp, r: K.r, gold: K.gold, x: innerWidth + 30 + i * 34, y: lane().y + (row - 1) * 46,
-          stopX: innerWidth * (0.5 + (k === "caster" ? 0.1 : k === "cannon" ? 0.06 : 0) + Math.random() * 0.04), next: now + 900 + Math.random() * 900 });
+    let units, shots, fx, coins, cs, gold, missed, streak, bestStreak, wave, nextWave, time, over, aaReady, qReady, shake, aim, raf;
+    const reset = () => {
+      units = []; shots = []; fx = []; coins = [];
+      cs = gold = missed = streak = bestStreak = wave = 0; nextWave = 0.5; time = 0; over = false; aaReady = 0; qReady = 0; shake = 0;
+      aim = { x: W * 0.7, y: H * 0.55 };
+    };
+    reset();
+    const laneY = () => H * 0.56, champ = () => ({ x: Math.max(70, W * 0.16), y: laneY() + 70 }), range = () => Math.max(260, W * 0.7);
+    const spawn = team => {
+      const kinds = ["melee", "melee", "melee", "caster", "caster", "caster"];
+      if (wave % 3 === 0) kinds.splice(3, 0, "cannon");
+      kinds.forEach((k, i) => {
+        const K = KIND[k], dir = team === "blue" ? 1 : -1;
+        units.push({ team, k, ...K, max: K.hp, cd: Math.random() * 0.5, x: (team === "blue" ? W * 0.07 : W * 0.93) - dir * i * 26,
+          y: laneY() + ((i % 3) - 1) * 40 + (Math.random() - 0.5) * 10, flash: 0, wave });
       });
     };
-    const float = (x, y, txt, col) => texts.push({ x, y, txt, col, life: 1 });
-    const attack = e => {
-      if (over) return restart();
-      const now = performance.now();
-      const m = mins.filter(m => !m.dead).sort((a, b) => Math.hypot(a.x - e.clientX, a.y - e.clientY) - Math.hypot(b.x - e.clientX, b.y - e.clientY))[0];
-      if (!m || Math.hypot(m.x - e.clientX, m.y - e.clientY) > m.r + 22) return;
-      if (now < readyAt) { float(e.clientX, e.clientY - 20, "on cooldown", "#a09b8c"); return; }
-      readyAt = now + CD;
-      const c = lane().champ;
-      bolts.push({ x: c.x, y: c.y, m });
+    const pop = (x, y, txt, col, size = 15) => fx.push({ x, y, txt, col, size, life: 1 });
+    const enemies = u => units.filter(o => o.team !== u.team && !o.dead);
+    // a red minion dies: gold if your hit landed it, otherwise it's a missed creep
+    const die = (u, byYou) => {
+      if (u.dead) return;
+      u.dead = true;
+      for (let i = 0; i < 10; i++) fx.push({ x: u.x, y: u.y, vx: (Math.random() - 0.5) * 160, vy: (Math.random() - 0.5) * 160, life: 0.7, dot: u.team === "red" ? "#ff8a7a" : "#8ab8ff" });
+      if (u.team !== "red" || over) return;
+      if (byYou) {
+        cs++; gold += u.gold; streak++; bestStreak = Math.max(bestStreak, streak);
+        pop(u.x, u.y - u.r - 16, "+" + u.gold, GOLD, u.k === "cannon" ? 22 : 16);
+        for (let i = 0; i < (u.k === "cannon" ? 8 : 4); i++) coins.push({ x: u.x, y: u.y, t: -i * 0.05 });
+        if (u.k === "cannon") shake = 0.35;
+        if (streak >= 3) pop(u.x, u.y - u.r - 36, streak + " in a row", TEAL, 13);
+        window.sfx.play("coin");
+      } else {
+        missed++; streak = 0;
+        pop(u.x, u.y - u.r - 16, "missed", "#8a8f98", 13);
+      }
+    };
+    const hit = (u, dmg, byYou) => {
+      if (u.dead) return;
+      u.hp -= dmg; u.flash = 0.12;
+      if (u.hp <= 0) die(u, byYou);
+    };
+    const target = (x, y) => units.filter(u => u.team === "red" && !u.dead).map(u => [u, Math.hypot(u.x - x, u.y - y)]).filter(([u, d]) => d < u.r + 24).sort((a, b) => a[1] - b[1])[0]?.[0];
+    const autoAttack = (x, y) => {
+      if (over) return reset();
+      const u = target(x, y);
+      if (!u) return;
+      const c = champ();
+      if (Math.hypot(u.x - c.x, u.y - c.y) > range()) return pop(x, y - 20, "out of range", "#8a8f98", 12);
+      if (time < aaReady) return pop(x, y - 20, "attack on cooldown", "#8a8f98", 12);
+      aaReady = time + AA_CD;
+      shots.push({ x: c.x, y: c.y, to: u, speed: 950, dmg: AD, mine: true, col: TEAL, r: 5 });
       window.sfx.play("blip");
     };
+    // Q: a straight bolt toward the pointer (or the weakest minion in reach, on touch); hits the first red minion it meets
+    const castQ = () => {
+      if (over || time < qReady) return;
+      qReady = time + Q_CD;
+      const c = champ();
+      let tx = aim.x, ty = aim.y;
+      if (matchMedia("(hover: none)").matches) {
+        const weak = units.filter(u => u.team === "red" && !u.dead).sort((a, b) => a.hp - b.hp)[0];
+        if (weak) { tx = weak.x; ty = weak.y; }
+      }
+      const d = Math.hypot(tx - c.x, ty - c.y) || 1;
+      shots.push({ x: c.x, y: c.y, vx: (tx - c.x) / d, vy: (ty - c.y) / d, speed: 1300, dmg: Q_DMG, mine: true, q: true, col: GOLD, r: 8, left: range() * 1.1 });
+      window.sfx.play("whoosh");
+    };
+    cv.addEventListener("pointerdown", e => autoAttack(e.clientX, e.clientY));
+    cv.addEventListener("pointermove", e => { aim = { x: e.clientX, y: e.clientY }; });
+    qBtn.addEventListener("click", castQ);
     const quit = () => {
-      cancelAnimationFrame(raf); cv.remove(); hud.remove(); exit.remove(); playing = false; window.lenis?.start();
+      cancelAnimationFrame(raf); cv.remove(); hud.remove(); exit.remove(); qBtn.remove(); playing = false; window.lenis?.start();
       removeEventListener("keydown", onKey); removeEventListener("resize", size);
     };
-    const onKey = e => { if (e.key === "Escape") quit(); };
-    const restart = () => { mins = []; bolts = []; texts = []; cs = gold = missed = wave = 0; waveAt = 0; t0 = performance.now(); over = false; };
-    cv.addEventListener("pointerdown", attack);
+    const onKey = e => { if (e.key === "Escape") quit(); if (e.key === "q" || e.key === "Q") castQ(); };
     exit.addEventListener("click", quit);
     addEventListener("keydown", onKey);
-    const kill = (m, byYou) => {
-      m.dead = true;
-      if (byYou) { cs++; gold += m.gold; float(m.x, m.y - m.r - 18, "+" + m.gold, GOLD); window.sfx.play("coin"); }
-      else { missed++; float(m.x, m.y - m.r - 18, "missed", "#a09b8c"); }
+
+    const drawRift = () => {
+      const y = laneY();
+      g.fillStyle = "#06120d"; g.fillRect(0, 0, W, H);
+      // jungle walls and brush either side of the lane
+      g.fillStyle = "#0c2018";
+      for (let i = 0; i < 18; i++) { const x = (i / 17) * W; g.beginPath(); g.ellipse(x, y - 150 + Math.sin(i * 2.3) * 12, 70, 36, 0, 0, Math.PI * 2); g.ellipse(x + 40, y + 170 + Math.cos(i * 1.7) * 12, 70, 34, 0, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = "#24342b"; g.fillRect(0, y - 105, W, 210);
+      g.fillStyle = "#2c3e33"; g.fillRect(0, y - 88, W, 176);
+      g.strokeStyle = "rgba(255,255,255,.03)"; g.lineWidth = 2;
+      for (let x = 0; x < W; x += 60) { g.beginPath(); g.moveTo(x, y - 88); g.lineTo(x + 30, y + 88); g.stroke(); }
+      // turrets at each end
+      [[W * 0.03, BLUE], [W * 0.97, RED]].forEach(([x, col]) => {
+        g.fillStyle = "#1a1f26"; g.fillRect(x - 16, y - 70, 32, 70);
+        g.fillStyle = col; g.beginPath(); g.arc(x, y - 78, 12, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 0.25 + Math.sin(time * 3) * 0.1; g.beginPath(); g.arc(x, y - 78, 22, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+      });
     };
+    const drawUnit = u => {
+      const col = u.team === "blue" ? BLUE : RED;
+      g.save(); g.translate(u.x + (u.lunge || 0) * 7 * (u.team === "blue" ? 1 : -1), u.y);
+      g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(0, u.r * 0.9, u.r, u.r * 0.35, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = u.flash > 0 ? "#fff" : col; g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 2;
+      g.beginPath();
+      if (u.k === "cannon") { g.rect(-u.r, -u.r * 0.75, u.r * 2, u.r * 1.5); g.moveTo(u.team === "blue" ? u.r : -u.r, -4); g.lineTo(u.team === "blue" ? u.r + 10 : -u.r - 10, -4); }
+      else if (u.k === "caster") { g.moveTo(0, -u.r); g.lineTo(u.r, 0); g.lineTo(0, u.r); g.lineTo(-u.r, 0); g.closePath(); }
+      else g.arc(0, 0, u.r, 0, Math.PI * 2);
+      g.fill(); g.stroke();
+      g.restore();
+      // health bar; red ones get your damage marked, and turn white when one auto attack finishes them
+      const w = u.r * 2.8, bx = u.x - w / 2, by = u.y - u.r - 13, killable = u.team === "red" && u.hp <= AD;
+      g.fillStyle = "#000"; g.fillRect(bx - 1, by - 1, w + 2, 7);
+      g.fillStyle = killable ? "#ffffff" : col; g.fillRect(bx, by, w * Math.max(0, u.hp / u.max), 5);
+      if (u.team === "red") { g.fillStyle = GOLD; g.fillRect(bx + w * Math.min(1, AD / u.max), by - 2, 1.5, 9); }
+      if (killable) { g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 1.5; g.beginPath(); g.arc(u.x, u.y, u.r + 6 + Math.sin(time * 12) * 1.5, 0, Math.PI * 2); g.stroke(); }
+    };
+    const drawChamp = () => {
+      const c = champ();
+      g.fillStyle = "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 2.5;
+      g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + (i * Math.PI) / 3; g[i ? "lineTo" : "moveTo"](c.x + Math.cos(a) * 22, c.y + Math.sin(a) * 22); } g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = GOLD; g.font = "700 16px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("✦", c.x, c.y + 1);
+      const aa = Math.max(0, aaReady - time) / AA_CD;
+      g.strokeStyle = TEAL; g.lineWidth = 3; g.beginPath(); g.arc(c.x, c.y, 29, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - aa)); g.stroke();
+      g.textBaseline = "alphabetic";
+    };
+
     let last = performance.now();
     const frame = now => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
-      const left = Math.max(0, ROUND - (now - t0) / 1000);
+      if (!over) time += dt;
+      const left = Math.max(0, ROUND - time);
       if (!over && left === 0) {
         over = true;
         store(() => localStorage.setItem(bestKey, Math.max(best(), cs)));
         if (cs >= 15) collect("blaster"); // fragment id kept from the old asteroid game so saved progress still counts
+        window.sfx.play(cs >= 15 ? "ok" : "close");
       }
-      if (!over && now > waveAt) { spawnWave(now); waveAt = now + 11000; }
-      const L = lane(), c = L.champ;
-      // the rift: dark jungle, a worn lane, the river glinting through the middle
-      g.fillStyle = "rgba(4,14,10,.92)"; g.fillRect(0, 0, innerWidth, innerHeight);
-      g.fillStyle = "#1b2a22"; g.fillRect(0, L.y - 95, innerWidth, 190);
-      g.fillStyle = "#24362c"; g.fillRect(0, L.y - 80, innerWidth, 160);
-      g.fillStyle = "rgba(10,200,185,.07)"; g.fillRect(innerWidth * 0.44, L.y - 95, innerWidth * 0.04, 190);
-      // minions: walk in, stop at the fight line, and take chip damage from your (unseen) wave
-      mins.forEach(m => {
-        if (m.dead) return;
-        if (m.x > m.stopX) m.x -= 180 * dt;
-        else if (!over && now > m.next) {
-          m.hp -= 10 + Math.random() * 16;
-          m.next = now + 700 + Math.random() * 700;
-          if (m.hp <= 0) kill(m, false);
+      if (!over && time >= nextWave) { wave++; spawn("blue"); spawn("red"); nextWave = time + Math.max(9, WAVE_EVERY - wave * 0.4); }
+      // minions: walk until something hostile is in range, then trade hits. Casters and cannons throw projectiles
+      units.forEach(u => {
+        if (u.dead) return;
+        u.flash = Math.max(0, u.flash - dt); u.lunge = Math.max(0, (u.lunge || 0) - dt * 6);
+        const foes = enemies(u);
+        let foe = null, fd = Infinity;
+        foes.forEach(o => { const d = Math.hypot(o.x - u.x, o.y - u.y); if (d < fd) { fd = d; foe = o; } });
+        if (foe && fd <= u.range + u.r + foe.r) {
+          u.cd -= dt;
+          if (u.cd <= 0 && !over) {
+            u.cd = u.rate * (0.9 + Math.random() * 0.2);
+            if (u.k === "melee") { hit(foe, u.dmg * (0.85 + Math.random() * 0.3), false); u.lunge = 1; }
+            else shots.push({ x: u.x, y: u.y, to: foe, speed: 520, dmg: u.dmg, mine: false, col: u.team === "blue" ? "#8ab8ff" : "#ff9a8a", r: u.k === "cannon" ? 5 : 3 });
+          }
+        } else if (!over) {
+          const tx = foe && fd < 260 ? foe.x : u.team === "blue" ? W + 60 : -60, ty = foe && fd < 260 ? foe.y : u.y;
+          const d = Math.hypot(tx - u.x, ty - u.y) || 1;
+          u.x += ((tx - u.x) / d) * 150 * dt; u.y += ((ty - u.y) / d) * 50 * dt;
         }
-        if (m.dead) return;
-        g.fillStyle = "#c2352b"; g.strokeStyle = "#ffb4a8"; g.lineWidth = 2;
-        g.beginPath();
-        if (m.k === "cannon") g.rect(m.x - m.r, m.y - m.r * 0.8, m.r * 2, m.r * 1.6);
-        else if (m.k === "caster") { g.moveTo(m.x, m.y - m.r); g.lineTo(m.x + m.r, m.y); g.lineTo(m.x, m.y + m.r); g.lineTo(m.x - m.r, m.y); g.closePath(); }
-        else g.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-        g.fill(); g.stroke();
-        // health bar, with a notch at your attack damage; it lights up when one hit will finish it
-        const w = m.r * 2.6, bx = m.x - w / 2, by = m.y - m.r - 12, killable = m.hp <= AD;
-        g.fillStyle = "#000"; g.fillRect(bx - 1, by - 1, w + 2, 7);
-        g.fillStyle = killable ? "#fff" : "#d8443a"; g.fillRect(bx, by, w * Math.max(0, m.hp / m.max), 5);
-        g.fillStyle = GOLD; g.fillRect(bx + w * (AD / m.max), by - 2, 1.5, 9);
       });
-      mins = mins.filter(m => !m.dead && m.x > -40);
-      // your champion: a hextech sigil with its attack range
-      g.strokeStyle = "rgba(200,170,110,.25)"; g.lineWidth = 1; g.beginPath(); g.arc(c.x, c.y, 34, 0, Math.PI * 2); g.stroke();
-      g.fillStyle = "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 2.5;
-      g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + (i * Math.PI) / 3; g[i ? "lineTo" : "moveTo"](c.x + Math.cos(a) * 20, c.y + Math.sin(a) * 20); } g.closePath(); g.fill(); g.stroke();
-      const cdLeft = Math.max(0, readyAt - now) / CD;
-      g.strokeStyle = TEAL; g.lineWidth = 3; g.beginPath(); g.arc(c.x, c.y, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cdLeft)); g.stroke();
-      // auto attacks fly at the target and land a moment later, so time it
-      bolts.forEach(b => {
-        const dx = b.m.x - b.x, dy = b.m.y - b.y, d = Math.hypot(dx, dy), step = 1400 * dt;
-        if (d <= step || b.m.dead) {
-          b.done = true;
-          if (!b.m.dead) { b.m.hp -= AD; if (b.m.hp <= 0) kill(b.m, true); }
+      // keep allies from stacking: overlapping teammates push apart (mostly sideways, so the line spreads out)
+      for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) {
+        const a = units[i], b = units[j];
+        if (a.dead || b.dead || a.team !== b.team) continue;
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01, min = a.r + b.r + 6;
+        if (d >= min) continue;
+        const k = (min - d) / 2, ux = dx / d, uy = dy / d || (i % 2 ? 1 : -1);
+        a.x -= ux * k * 0.4; b.x += ux * k * 0.4; a.y -= uy * k; b.y += uy * k;
+      }
+      units.forEach(u => { u.y = Math.max(laneY() - 80, Math.min(laneY() + 80, u.y)); });
+      units = units.filter(u => !u.dead && u.x > -80 && u.x < W + 80);
+      // projectiles
+      shots.forEach(s => {
+        if (s.q) {
+          const step = s.speed * dt;
+          s.x += s.vx * step; s.y += s.vy * step; s.left -= step;
+          const h = units.find(u => u.team === "red" && !u.dead && Math.hypot(u.x - s.x, u.y - s.y) < u.r + s.r);
+          if (h) { hit(h, s.dmg, true); s.done = true; pop(h.x, h.y - h.r - 30, String(s.dmg), GOLD, 13); }
+          if (s.left <= 0) s.done = true;
           return;
         }
-        b.x += (dx / d) * step; b.y += (dy / d) * step;
-        g.fillStyle = TEAL; g.shadowColor = TEAL; g.shadowBlur = 12; g.beginPath(); g.arc(b.x, b.y, 5, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+        if (s.to.dead) { s.done = true; return; }
+        const dx = s.to.x - s.x, dy = s.to.y - s.y, d = Math.hypot(dx, dy), step = s.speed * dt;
+        if (d <= step) { s.done = true; hit(s.to, s.dmg, s.mine); return; }
+        s.x += (dx / d) * step; s.y += (dy / d) * step;
       });
-      bolts = bolts.filter(b => !b.done);
-      g.textAlign = "center"; g.font = "600 14px system-ui, sans-serif";
-      texts.forEach(t => { t.y -= 30 * dt; t.life -= dt * 1.1; g.globalAlpha = Math.max(0, t.life); g.fillStyle = t.col; g.fillText(t.txt, t.x, t.y); });
+      shots = shots.filter(s => !s.done);
+
+      shake = Math.max(0, shake - dt);
+      g.save();
+      if (shake) g.translate((Math.random() - 0.5) * 10 * shake, (Math.random() - 0.5) * 10 * shake);
+      drawRift();
+      units.slice().sort((a, b) => a.y - b.y).forEach(drawUnit);
+      drawChamp();
+      shots.forEach(s => {
+        g.fillStyle = s.col; g.shadowColor = s.col; g.shadowBlur = s.mine ? 14 : 4;
+        g.beginPath(); g.arc(s.x, s.y, s.r, 0, Math.PI * 2); g.fill();
+        if (s.q) { g.globalAlpha = 0.4; g.beginPath(); g.arc(s.x - s.vx * 14, s.y - s.vy * 14, s.r * 0.7, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+      });
+      g.shadowBlur = 0;
+      // Q aim line on desktop while it's ready
+      if (!over && time >= qReady && !matchMedia("(hover: none)").matches) {
+        const c = champ(), d = Math.hypot(aim.x - c.x, aim.y - c.y) || 1, L = range() * 1.1;
+        g.strokeStyle = "rgba(200,170,110,.18)"; g.lineWidth = 16; g.lineCap = "round";
+        g.beginPath(); g.moveTo(c.x, c.y); g.lineTo(c.x + ((aim.x - c.x) / d) * L, c.y + ((aim.y - c.y) / d) * L); g.stroke(); g.lineCap = "butt";
+      }
+      fx.forEach(f => {
+        f.life -= dt * (f.dot ? 1.6 : 1);
+        g.globalAlpha = Math.max(0, f.life);
+        if (f.dot) { f.x += f.vx * dt; f.y += f.vy * dt; g.fillStyle = f.dot; g.fillRect(f.x, f.y, 3, 3); }
+        else { f.y -= 34 * dt; g.fillStyle = f.col; g.font = `700 ${f.size}px system-ui, sans-serif`; g.textAlign = "center"; g.fillText(f.txt, f.x, f.y); }
+      });
       g.globalAlpha = 1;
-      texts = texts.filter(t => t.life > 0);
+      fx = fx.filter(f => f.life > 0);
+      // gold coins fly up to the score
+      coins.forEach(k => {
+        k.t += dt;
+        if (k.t < 0) return;
+        const p = Math.min(1, k.t / 0.6), e = p * p, tx = W / 2 - 60, ty = 100;
+        const x = k.x + (tx - k.x) * e, y = k.y + (ty - k.y) * e - Math.sin(p * Math.PI) * 60;
+        g.fillStyle = GOLD; g.beginPath(); g.arc(x, y, 5, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#785a28"; g.lineWidth = 1; g.stroke();
+        if (p >= 1) k.done = true;
+      });
+      coins = coins.filter(k => !k.done);
+      g.restore();
+
+      const qLeft = Math.max(0, qReady - time);
+      qBtn.classList.toggle("cd", qLeft > 0);
+      qBtn.style.setProperty("--cd", qLeft / Q_CD);
+      const total = cs + missed, pct = total ? Math.round((cs / total) * 100) : 0;
+      const grade = pct >= 90 ? "S" : pct >= 75 ? "A" : pct >= 55 ? "B" : pct >= 35 ? "C" : "D";
       const mm = Math.floor(left / 60), ss = String(Math.floor(left % 60)).padStart(2, "0");
       hud.innerHTML = over
-        ? `<b>${cs}</b> CS · ${gold} gold · ${missed} missed · best ${Math.max(best(), cs)}<span>${cs >= 15 ? "Clean farming. " : ""}Click to play again</span>`
-        : `<b>${cs}</b> CS · ${gold} gold · ${mm}:${ss} · best ${best()}<span>Hit a minion when its bar turns white</span>`;
+        ? `<b>${grade}</b> ${cs} CS · ${pct}% of the wave · ${gold} gold · best streak ${bestStreak} · best ${Math.max(best(), cs)}<span>Click to queue again</span>`
+        : `<b>${cs}</b> CS · ${gold} gold · ${pct}% · ${mm}:${ss}${streak >= 3 ? ` · ${streak} streak` : ""} · best ${best()}<span>Hit a red minion when its bar turns white · ${matchMedia("(hover: none)").matches ? "tap Q" : "Q"} for a skillshot</span>`;
     };
     raf = requestAnimationFrame(frame);
-    toast("Last hit: 60 seconds in lane. 15 CS earns a star fragment.");
+    toast("Last hit: your minions fight theirs. Take the killing blow for gold. 15 CS earns a star fragment.");
   };
 
   // ---------- star fragments: one hidden on each planet page, plus two earned by playing ----------
@@ -1224,32 +1385,214 @@
     });
   };
 
-  // sports: a penalty at the Stretford End. Pick a corner; the keeper guesses
+  // sports: a penalty shootout at Old Trafford. Aim anywhere in the goal, hold to build power (too much and it
+  // flies over), release to shoot. Then go in goal and pick where to dive. Five each, then sudden death.
   const unitedFx = () => {
-    const o = overlay("united-fx", "Penalty", '<div class="pk">' + emblem("sports") +
-      '<small>Old Trafford · Theatre of Dreams</small><b>Penalty to United</b>' +
-      '<div class="pk-pitch"><div class="pk-led" aria-hidden="true"><span>' + "GLORY GLORY MAN UNITED · RED DEVILS · ".repeat(4) + '</span></div><div class="pk-goal"><i class="pk-keeper"></i>' +
-      ["Bottom left", "Down the middle", "Top right"].map((t, i) => `<button type="button" class="pk-zone" data-z="${i}" aria-label="Shoot ${t.toLowerCase()}"></button>`).join("") +
-      '</div><i class="pk-ball"></i></div>' +
-      '<p class="pk-msg" aria-live="polite">Pick your corner.</p><p class="pk-score">Goals <b>0</b> · Saved <b>0</b></p>' +
+    const o = overlay("united-fx", "Penalty shootout", '<div class="pk">' + emblem("sports") +
+      '<small>Old Trafford · Theatre of Dreams</small><b>Penalty shootout</b>' +
+      '<div class="pk-board"><span>MUN</span><i class="pk-marks"></i><strong>0 – 0</strong><i class="pk-marks"></i><span>OPP</span></div>' +
+      '<canvas class="pk-cv" aria-label="Penalty shootout. Aim with the pointer, hold to power up, release to shoot."></canvas>' +
+      '<p class="pk-msg" aria-live="polite"></p>' +
       '<button class="btn" type="button" data-close>Back to the dressing room</button></div>');
     if (!o) return;
-    const pitch = $(".pk-pitch", o.fx), msg = $(".pk-msg", o.fx), [goals, saves] = $$(".pk-score b", o.fx);
-    let busy = false;
-    $$(".pk-zone", o.fx).forEach(z => z.addEventListener("click", () => {
-      if (busy) return;
-      busy = true;
-      const aim = +z.dataset.z, dive = Math.floor(Math.random() * 3), scored = aim !== dive;
-      pitch.dataset.aim = aim; pitch.dataset.dive = dive;
-      pitch.classList.remove("goal", "saved"); void pitch.offsetWidth; pitch.classList.add("shot");
+    const cv = $(".pk-cv", o.fx), g = cv.getContext("2d"), dpr = Math.min(devicePixelRatio, 2), VW = 720, VH = 450;
+    cv.width = VW * dpr; cv.height = VH * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const msg = $(".pk-msg", o.fx), [usMarks, themMarks] = $$(".pk-marks", o.fx), score = $(".pk-board strong", o.fx);
+    const GOAL = { l: 190, r: 530, top: 172, line: 300 }, SPOT = { x: 360, y: 412 };
+    const crowd = Array.from({ length: 700 }, () => ({ x: Math.random() * VW, y: 8 + Math.random() * 96, c: ["#da291c", "#da291c", "#fff", "#111", "#fbe122"][Math.random() * 5 | 0], p: Math.random() * 6 }));
+    let us = [], them = [], phase = "aim", t = 0, aim = { x: 360, y: 230 }, charging = false, power = 0, shot = null, keeper = null, dive = null, confetti = [], raf;
+
+    const say = txt => { msg.textContent = txt; };
+    const marks = list => Array.from({ length: Math.max(5, list.length) }, (_, i) => `<i class="${list[i] === undefined ? "" : list[i] ? "in" : "out"}"></i>`).join("");
+    const board = () => {
+      usMarks.innerHTML = marks(us); themMarks.innerHTML = marks(them);
+      score.textContent = `${us.filter(Boolean).length} – ${them.filter(Boolean).length}`;
+    };
+    // is it decided? regulation is five each; after that, sudden death once both have kicked
+    const verdict = () => {
+      const a = us.filter(Boolean).length, b = them.filter(Boolean).length;
+      if (us.length <= 5 && them.length <= 5) {
+        if (a + (5 - us.length) < b) return "lose";
+        if (b + (5 - them.length) < a) return "win";
+        return null;
+      }
+      return us.length === them.length && a !== b ? (a > b ? "win" : "lose") : null;
+    };
+    const next = () => {
+      board();
+      const v = verdict();
+      if (v) {
+        phase = "end";
+        if (v === "win") {
+          say("UNITED WIN! Glory Glory Man United! Tap the pitch to go again.");
+          window.sfx.play("crowd"); window.sfx.play("ok");
+          for (let i = 0; i < 160; i++) confetti.push({ x: Math.random() * VW, y: -Math.random() * 200, vx: (Math.random() - 0.5) * 60, vy: 80 + Math.random() * 120, c: ["#da291c", "#fff", "#fbe122", "#111"][i % 4], r: Math.random() * 6 });
+        } else { say("Heartbreak at Old Trafford. Tap the pitch to go again."); window.sfx.play("close"); }
+        return;
+      }
+      if (us.length === them.length) { phase = "aim"; keeper = { x: 360, y: GOAL.line, tx: 360, ty: GOAL.line, kit: "#3d6fd8" }; say(us.length >= 5 ? "Sudden death. Your kick." : "Your kick. Aim, hold to power up, release to shoot."); }
+      else {
+        phase = "save"; t = 0; dive = null;
+        keeper = { x: 360, y: GOAL.line, tx: 360, ty: GOAL.line, kit: "#2fbf5b" };
+        say("You're in goal. Tap where you'll dive before they strike.");
+      }
+    };
+    const restart = () => { us = []; them = []; confetti = []; shot = null; next(); };
+
+    // pointer → canvas space
+    const pt = e => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * VH }; };
+    cv.addEventListener("pointermove", e => { if (phase === "aim") { const p = pt(e); aim = { x: Math.max(150, Math.min(570, p.x)), y: Math.max(120, Math.min(312, p.y)) }; } });
+    cv.addEventListener("pointerdown", e => {
+      try { cv.setPointerCapture(e.pointerId); } catch {}
+      const p = pt(e);
+      if (phase === "end") return restart();
+      if (phase === "aim") { aim = { x: Math.max(150, Math.min(570, p.x)), y: Math.max(120, Math.min(312, p.y)) }; charging = true; power = 0; t = 0; }
+      if (phase === "save" && !dive) { dive = { x: Math.max(GOAL.l, Math.min(GOAL.r, p.x)), y: Math.max(GOAL.top + 10, Math.min(GOAL.line, p.y)) }; say("Set. Hold your nerve..."); }
+    });
+    cv.addEventListener("pointerup", () => { if (phase === "aim" && charging) strike(); });
+
+    // our kick: power lifts the ball and adds spray; the keeper reads it sometimes
+    const strike = () => {
+      charging = false;
+      const p = power, spray = 10 + (p > 0.85 ? 26 : 0);
+      const target = { x: aim.x + (Math.random() - 0.5) * spray * 2, y: aim.y - Math.max(0, p - 0.72) * 190 + (Math.random() - 0.5) * spray };
+      const T = 0.78 - p * 0.36, reads = Math.random() < 0.42;
+      const kx = reads ? target.x + (Math.random() - 0.5) * 80 : 210 + Math.random() * 300;
+      keeper.tx = Math.max(GOAL.l + 10, Math.min(GOAL.r - 10, kx));
+      keeper.ty = Math.max(GOAL.top + 30, Math.min(GOAL.line, reads ? target.y + 30 : 200 + Math.random() * 100));
+      keeper.start = 0.12; keeper.reach = 58 + (p < 0.35 ? 34 : 0) - (p > 0.8 ? 14 : 0);
+      shot = { from: { ...SPOT }, to: target, T, k: 0, mine: true, lift: 30 + p * 40 };
+      phase = "flight"; t = 0;
       window.sfx.play("press");
-      setTimeout(() => {
-        pitch.classList.add(scored ? "goal" : "saved");
-        if (scored) { goals.textContent = +goals.textContent + 1; msg.textContent = "GOAL! Glory Glory Man United!"; window.sfx.play("crowd"); window.sfx.play("ok"); }
-        else { saves.textContent = +saves.textContent + 1; msg.textContent = "Saved. Go again."; window.sfx.play("thud"); }
-      }, 480);
-      setTimeout(() => { pitch.classList.remove("shot", "goal", "saved"); busy = false; if (scored) msg.textContent = "Again? Pick a corner."; }, 2200);
-    }));
+    };
+    // their kick, after a short run-up: you're the keeper, already committed to your dive point
+    const theirStrike = () => {
+      const corner = Math.random() < 0.65;
+      const target = corner
+        ? { x: Math.random() < 0.5 ? GOAL.l + 22 + Math.random() * 60 : GOAL.r - 22 - Math.random() * 60, y: GOAL.top + 20 + Math.random() * 100 }
+        : { x: 270 + Math.random() * 180, y: GOAL.top + 40 + Math.random() * 80 };
+      if (Math.random() < 0.1) target.y = GOAL.top - 30 - Math.random() * 40; // skied it
+      const d = dive || { x: 360, y: GOAL.line - 30 };
+      keeper.tx = d.x; keeper.ty = Math.max(GOAL.top + 30, d.y + 30); keeper.start = 0; keeper.reach = dive ? 66 : 40;
+      shot = { from: { ...SPOT }, to: target, T: 0.5 + Math.random() * 0.15, k: 0, mine: false, lift: 50 };
+      phase = "flight"; t = 0;
+      window.sfx.play("press");
+    };
+    const keeperAt = time => {
+      const p = Math.max(0, Math.min(1, (time - (keeper.start || 0)) / 0.42)), e = 1 - Math.pow(1 - p, 3);
+      return { x: 360 + (keeper.tx - 360) * e, y: GOAL.line + (keeper.ty - GOAL.line) * e, p: e };
+    };
+    const resolve = () => {
+      const s = shot, b = s.to, kp = keeperAt(s.T);
+      const wide = b.x < GOAL.l + 6 || b.x > GOAL.r - 6, over = b.y < GOAL.top + 6;
+      const saved = !wide && !over && Math.hypot(kp.x - b.x, (kp.y - 34) - b.y) < keeper.reach;
+      const scored = !wide && !over && !saved;
+      s.result = scored ? "goal" : saved ? "saved" : "miss";
+      (s.mine ? us : them).push(scored);
+      if (s.mine) {
+        if (scored) { say("GOAL! Glory Glory Man United!"); window.sfx.play("crowd"); window.sfx.play("coin"); }
+        else say(saved ? "Saved! He guessed right." : over ? "Over the bar. Too much power." : "Wide. So close.");
+        if (!scored) window.sfx.play(saved ? "thud" : "close");
+      } else {
+        if (scored) { say("They score. Your kick next."); window.sfx.play("close"); }
+        else { say(saved ? "WHAT A SAVE!" : "They've missed it!"); window.sfx.play(saved ? "thud" : "crowd"); if (saved) window.sfx.play("crowd"); }
+      }
+      phase = "result"; t = 0;
+    };
+
+    const draw = dt => {
+      // stands: the Stretford End, a flickering red sea
+      g.fillStyle = "#14090a"; g.fillRect(0, 0, VW, 112);
+      crowd.forEach(c => { g.globalAlpha = 0.55 + Math.sin(c.p + performance.now() / 400) * 0.25; g.fillStyle = c.c; g.fillRect(c.x, c.y, 3, 3); });
+      g.globalAlpha = 0.18; g.fillStyle = "#fff"; g.font = "700 26px system-ui, sans-serif"; g.textAlign = "center"; g.fillText("STRETFORD END", VW / 2, 62); g.globalAlpha = 1;
+      // LED board
+      g.fillStyle = "#120303"; g.fillRect(0, 112, VW, 22);
+      g.fillStyle = "#ff3b2f"; g.font = "600 13px ui-monospace, monospace"; g.textAlign = "left";
+      const led = "GLORY GLORY MAN UNITED  ·  RED DEVILS  ·  THEATRE OF DREAMS  ·  ", lw = g.measureText(led).width, off = -((performance.now() / 22) % lw);
+      for (let x = off; x < VW; x += lw) g.fillText(led, x, 128);
+      // pitch
+      for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#237a30" : "#1f6b2a"; g.fillRect(0, 134 + i * 40, VW, 40); }
+      g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(40, GOAL.line); g.lineTo(VW - 40, GOAL.line); g.moveTo(110, GOAL.line); g.lineTo(60, 440); g.moveTo(VW - 110, GOAL.line); g.lineTo(VW - 60, 440); g.stroke();
+      g.fillStyle = "#fff"; g.beginPath(); g.ellipse(SPOT.x, SPOT.y + 8, 5, 2.5, 0, 0, Math.PI * 2); g.fill();
+      // net, bulging where a goal went in
+      const bulge = shot && shot.result === "goal" ? shot.to : null, bt = phase === "result" ? Math.max(0, 1 - t / 1.2) : 0;
+      g.strokeStyle = "rgba(255,255,255,.28)"; g.lineWidth = 1;
+      const push = (x, y) => { if (!bulge) return [x, y]; const d = Math.hypot(x - bulge.x, y - bulge.y), k = Math.max(0, 1 - d / 90) * 14 * bt; return [x + (x - bulge.x) / (d || 1) * k * 0.3, y - k * 0.6]; };
+      for (let x = GOAL.l; x <= GOAL.r; x += 14) { g.beginPath(); for (let y = GOAL.top; y <= GOAL.line; y += 8) { const [a, b] = push(x, y); y === GOAL.top ? g.moveTo(a, b) : g.lineTo(a, b); } g.stroke(); }
+      for (let y = GOAL.top; y <= GOAL.line; y += 14) { g.beginPath(); for (let x = GOAL.l; x <= GOAL.r; x += 8) { const [a, b] = push(x, y); x === GOAL.l ? g.moveTo(a, b) : g.lineTo(a, b); } g.stroke(); }
+      g.strokeStyle = "#fff"; g.lineWidth = 7; g.lineCap = "round";
+      g.beginPath(); g.moveTo(GOAL.l, GOAL.line); g.lineTo(GOAL.l, GOAL.top); g.lineTo(GOAL.r, GOAL.top); g.lineTo(GOAL.r, GOAL.line); g.stroke(); g.lineCap = "butt";
+      // keeper
+      const kp = phase === "flight" || phase === "result" ? keeperAt(phase === "flight" ? t : shot.T) : { x: 360 + Math.sin(performance.now() / 300) * 14, y: GOAL.line, p: 0 };
+      const lean = (keeper.tx - 360) / 170 * kp.p;
+      g.save(); g.translate(kp.x, kp.y); g.rotate(lean * 1.25);
+      g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.ellipse(0, 2, 20, 5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#111"; g.fillRect(-12, -30, 10, 30); g.fillRect(2, -30, 10, 30);
+      g.fillStyle = keeper.kit; g.fillRect(-16, -66, 32, 38);
+      g.lineWidth = 9; g.lineCap = "round"; g.strokeStyle = keeper.kit;
+      g.beginPath(); g.moveTo(-14, -60); g.lineTo(-30, -84 + kp.p * 10); g.moveTo(14, -60); g.lineTo(30, -84 + kp.p * 10); g.stroke(); g.lineCap = "butt";
+      g.fillStyle = "#f2f2f2"; g.beginPath(); g.arc(-31, -86 + kp.p * 10, 6, 0, Math.PI * 2); g.arc(31, -86 + kp.p * 10, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#e0b48a"; g.beginPath(); g.arc(0, -76, 10, 0, Math.PI * 2); g.fill();
+      g.restore();
+      // the taker in red, number 7
+      if (phase === "aim" || (shot && shot.mine && phase !== "save")) {
+        g.save(); g.translate(SPOT.x - 34, 446);
+        g.fillStyle = "#fff"; g.fillRect(-9, -26, 8, 24); g.fillRect(2, -26, 8, 24);
+        g.fillStyle = "#da291c"; g.fillRect(-13, -64, 26, 40);
+        g.fillStyle = "#fff"; g.font = "800 18px system-ui, sans-serif"; g.textAlign = "center"; g.fillText("7", 0, -38);
+        g.fillStyle = "#3a2516"; g.beginPath(); g.arc(0, -72, 9, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+      // ball: arcs toward its target, shrinking with distance
+      let bx = SPOT.x, by = SPOT.y, bs = 1;
+      if (shot && (phase === "flight" || phase === "result")) {
+        const k = phase === "flight" ? Math.min(1, t / shot.T) : 1, e = 1 - Math.pow(1 - k, 2);
+        let tx = shot.to.x, ty = shot.to.y;
+        if (phase === "result" && shot.result === "saved") { const r = Math.min(1, t / 0.6); tx += (shot.to.x < 360 ? -1 : 1) * 120 * r; ty += 140 * r - 200 * r * (1 - r); }
+        if (phase === "result" && shot.result === "miss") { const r = Math.min(1, t / 0.6); tx += (shot.to.x - 360) * 0.4 * r; ty -= 60 * r; }
+        bx = shot.from.x + (tx - shot.from.x) * e; by = shot.from.y + (ty - shot.from.y) * e - Math.sin(Math.PI * k) * shot.lift; bs = 1 - 0.45 * e;
+      }
+      g.fillStyle = "rgba(0,0,0,.3)"; g.beginPath(); g.ellipse(bx, Math.max(by, GOAL.line) + 10 * bs, 11 * bs, 3.5 * bs, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fff"; g.beginPath(); g.arc(bx, by, 12 * bs, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#222"; g.beginPath(); g.arc(bx + 2 * bs, by - 1 * bs, 4 * bs, 0, Math.PI * 2); g.fill();
+      // aim reticle and power meter
+      if (phase === "aim") {
+        g.strokeStyle = "#fbe122"; g.lineWidth = 2;
+        g.beginPath(); g.arc(aim.x, aim.y, 14, 0, Math.PI * 2); g.moveTo(aim.x - 22, aim.y); g.lineTo(aim.x - 8, aim.y); g.moveTo(aim.x + 8, aim.y); g.lineTo(aim.x + 22, aim.y); g.moveTo(aim.x, aim.y - 22); g.lineTo(aim.x, aim.y - 8); g.moveTo(aim.x, aim.y + 8); g.lineTo(aim.x, aim.y + 22); g.stroke();
+        const mx = 640, my = 300, mh = 120;
+        const grad = g.createLinearGradient(0, my + mh, 0, my); grad.addColorStop(0, "#3fbf3f"); grad.addColorStop(0.7, "#fbe122"); grad.addColorStop(1, "#da291c");
+        g.fillStyle = "rgba(0,0,0,.5)"; g.fillRect(mx - 3, my - 3, 22, mh + 6);
+        g.fillStyle = grad; g.fillRect(mx, my + mh * (1 - power), 16, mh * power);
+        g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1; g.beginPath(); g.moveTo(mx - 4, my + mh * 0.28); g.lineTo(mx + 20, my + mh * 0.28); g.stroke();
+        g.fillStyle = "#fff"; g.font = "600 10px ui-monospace, monospace"; g.textAlign = "center"; g.fillText("POWER", mx + 8, my + mh + 16);
+      }
+      if (phase === "save") {
+        const left = Math.max(0, 1.6 - t);
+        g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(SPOT.x - 70, 330, 140, 30);
+        g.fillStyle = "#fff"; g.font = "700 15px system-ui, sans-serif"; g.textAlign = "center"; g.fillText(dive ? "Diving..." : `Run-up ${left.toFixed(1)}s`, SPOT.x, 350);
+        if (dive) { g.strokeStyle = "#2fbf5b"; g.lineWidth = 2; g.beginPath(); g.arc(dive.x, dive.y, 16, 0, Math.PI * 2); g.stroke(); }
+      }
+      confetti.forEach(c => { c.x += c.vx * dt; c.y += c.vy * dt; c.r += dt * 6; g.fillStyle = c.c; g.save(); g.translate(c.x, c.y); g.rotate(c.r); g.fillRect(-3, -5, 6, 10); g.restore(); });
+      confetti = confetti.filter(c => c.y < VH + 20);
+    };
+    let last = performance.now();
+    const loop = now => {
+      if (!o.fx.isConnected) return;
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      t += dt;
+      if (phase === "aim" && charging) power = Math.min(1, power + dt / 1.1);
+      if (phase === "save" && t >= 1.6) theirStrike();
+      if (phase === "flight" && t >= shot.T) resolve();
+      if (phase === "result" && t >= 1.5) next();
+      draw(dt);
+    };
+    o.onClose(() => cancelAnimationFrame(raf));
+    keeper = { x: 360, y: GOAL.line, tx: 360, ty: GOAL.line, kit: "#3d6fd8" };
+    board();
+    say("Your kick. Aim, hold to power up, release to shoot.");
+    raf = requestAnimationFrame(loop);
   };
 
   // ---------- about: off-duty cards do something ----------

@@ -313,7 +313,7 @@
   document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const i = +a.dataset.goto; i === current ? land(i) : goTo(i); }));
   const setCurrent = i => {
     if (i === current) return;
-    if (current >= 0) sfx.play("rev"); // the engines rev as you pull up to each planet
+    if (current >= 0) { sfx.play("rev"); sfx.play("swoosh"); } // the engines rev and the planet rushes past
     current = i;
     const p = PLANETS[i];
     document.body.style.setProperty("--planet", p.accent);

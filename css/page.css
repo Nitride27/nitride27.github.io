@@ -3376,12 +3376,15 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
   z-index: 700;
   display: grid;
   place-items: center;
-  overflow: hidden;
+  overflow: hidden auto;
+  padding: 1rem 0;
+  place-items: safe center;
   background: rgba(0, 0, 0, .9);
   backdrop-filter: blur(8px);
   animation: af-in .3s both;
 }
 .duty-fx.out { animation: af-in .45s reverse both; }
+.anime-fx { overflow: hidden; } /* its speed lines overhang the screen on purpose */
 @keyframes af-in { from { opacity: 0; } }
 
 /* manga speed lines converging on the centre */
@@ -3554,79 +3557,44 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
 .league-fx.accepted .lol-accept { background: #0ac8b9; color: #010a13; }
 
 /* =========================
-   UNITED: a penalty at Old Trafford
+   UNITED: a penalty shootout at Old Trafford
    ========================= */
 .united-fx { background: radial-gradient(circle at 50% 30%, #3a0805f2, #0b0202f7 70%); }
-.pk { width: min(560px, calc(100vw - 2rem)); }
+.pk { width: min(720px, calc(100vw - 1.5rem), calc((100vh - 300px) * 1.6)); min-width: min(320px, calc(100vw - 1.5rem)); gap: .6rem; }
+.pk .fx-emblem { width: 72px; height: 72px; }
 .pk > b { color: #fff; text-shadow: 0 0 24px #da291c; }
 .pk small { color: #fbe122; }
-.pk-pitch {
-  position: relative;
-  width: 100%;
-  height: 300px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: repeating-linear-gradient(180deg, #1f6b2a 0 30px, #237a30 30px 60px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, .6);
-}
-.pk-goal {
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  top: 40px;
-  height: 130px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border: 5px solid #fff;
-  border-bottom: 0;
-  background: repeating-linear-gradient(45deg, #ffffff22 0 1px, transparent 1px 10px), repeating-linear-gradient(-45deg, #ffffff22 0 1px, transparent 1px 10px), #0004;
-}
-.pk-zone { position: relative; z-index: 2; border: 0; background: none; cursor: crosshair; transition: background .2s; }
-.pk-zone:hover, .pk-zone:focus-visible { background: #da291c33; outline: none; }
-.pk-keeper {
-  position: absolute;
+.pk-board { display: flex; align-items: center; gap: .7rem; padding: .45rem .9rem; border: 1px solid #da291c66; border-radius: 8px; background: #000a; font-family: var(--mono); font-size: .8rem; letter-spacing: .12em; }
+.pk-board strong { font-family: var(--display); font-size: 1.3rem; color: #fff; min-width: 4.5ch; text-align: center; }
+.pk-board span { color: #fbe122; }
+.pk-marks { display: flex; gap: 4px; font-style: normal; }
+.pk-marks i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff66; }
+.pk-marks i.in { background: #3fbf3f; border-color: #3fbf3f; }
+.pk-marks i.out { background: #da291c; border-color: #da291c; }
+.pk-cv { width: 100%; aspect-ratio: 720 / 450; border-radius: 10px; touch-action: none; cursor: crosshair; box-shadow: 0 30px 60px rgba(0, 0, 0, .6); }
+.pk-msg { min-height: 1.4em; font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: #fff; }
+@media (max-width: 560px) { .pk > b { font-size: 1.4rem; } .pk .fx-emblem { width: 64px; height: 64px; } }
+
+/* LAST HIT: the Q button */
+.lh-q {
+  position: fixed;
   left: 50%;
-  bottom: 0;
-  width: 34px;
-  height: 70px;
-  margin-left: -17px;
-  border-radius: 14px 14px 4px 4px;
-  background: linear-gradient(#222 0 26%, #3fbf3f 26%);
-  transform-origin: 50% 100%;
-  transition: transform .4s cubic-bezier(.3, .8, .4, 1);
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  z-index: 552;
+  width: 74px;
+  height: 74px;
+  margin-left: -37px;
+  border: 2px solid #c8aa6e;
+  border-radius: 12px;
+  background: conic-gradient(#000b calc(var(--cd, 0) * 360deg), transparent 0), linear-gradient(#1e2328, #0a1428);
+  color: #f0e6d2;
+  font: 700 1.6rem/1 var(--display);
+  cursor: pointer;
+  box-shadow: 0 0 20px #0ac8b944;
 }
-.pk-ball {
-  position: absolute;
-  left: 50%;
-  bottom: 26px;
-  width: 26px;
-  height: 26px;
-  margin-left: -13px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff 0 30%, #ccc 60%, #777);
-  box-shadow: 0 6px 10px #0008;
-  transition: transform .45s cubic-bezier(.2, .7, .3, 1);
-}
-.pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-80px) rotate(-70deg); }
-.pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(80px) rotate(70deg); }
-.pk-pitch.shot[data-dive="1"] .pk-keeper { transform: translateY(-14px); }
-.pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-140px, -113px) scale(.55) rotate(-540deg); }
-.pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -138px) scale(.55) rotate(540deg); }
-.pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(140px, -178px) scale(.55) rotate(540deg); }
-.pk-pitch.saved .pk-ball { transform: translate(0, -60px) scale(.8) !important; transition-duration: .5s; }
-.pk-pitch.goal { animation: pk-goal .8s ease-out; }
-@keyframes pk-goal { 0% { box-shadow: 0 0 0 0 #da291c, 0 30px 60px #0009; } 40% { box-shadow: 0 0 0 10px #da291c, 0 0 80px #da291c; } }
-.pk-msg { min-height: 1.4em; font-family: var(--display); font-weight: 600; font-size: 1.15rem; color: #fff; }
-.pk-score { color: var(--muted); font-size: .85rem; }
-.pk-score b { color: #fff; font-weight: 600; }
-@media (max-width: 560px) {
-  .pk-pitch { height: 250px; }
-  .pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-95px, -64px) scale(.55); }
-  .pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -89px) scale(.55); }
-  .pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(95px, -139px) scale(.55); }
-  .pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-55px) rotate(-70deg); }
-  .pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(55px) rotate(70deg); }
-}
+.lh-q small { display: block; margin-top: 4px; font: 500 .5rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #a09b8c; }
+.lh-q.cd { border-color: #785a28; color: #a09b8c; }
+.lh-canvas { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .gt, .lol, .pk { animation: none; } .gt-str.hum { animation: none; } }
 
 /* hover emblems on the off-duty cards: a guitar, a League sigil, a Red Devil crest */
@@ -3657,24 +3625,4 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
 .united-fx .fx-emblem { width: 96px; height: 96px; filter: drop-shadow(0 0 18px #da291c); }
 .league-fx .fx-emblem { filter: drop-shadow(0 0 12px #0ac8b955); }
 
-/* LED advertising board behind the goal */
-.pk-led {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 8px;
-  height: 22px;
-  overflow: hidden;
-  background: #120303;
-  border-block: 1px solid #000;
-  font-family: var(--mono);
-  font-size: .72rem;
-  line-height: 22px;
-  letter-spacing: .2em;
-  color: #ff3b2f;
-  text-shadow: 0 0 6px #ff3b2f;
-  white-space: nowrap;
-}
-.pk-led span { display: inline-block; animation: led 18s linear infinite; }
-@keyframes led { to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .pk-led span { animation: none; } }
+
