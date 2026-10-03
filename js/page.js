@@ -166,31 +166,16 @@
     src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
-  // passing a planet: a deep doppler whoom. A low sine that falls in pitch as it goes by, under a swell of
-  // dark, filtered air, panned across. Big and soft, nothing high-pitched
-  const pass = () => {
-    const c = ac(); if (!c) return;
-    const t = c.currentTime, dur = 1.8, o = c.createOscillator(), lo = c.createBiquadFilter(), src = c.createBufferSource();
-    o.type = "sine";
-    o.frequency.setValueAtTime(92, t); o.frequency.setValueAtTime(92, t + dur * 0.4); o.frequency.exponentialRampToValueAtTime(48, t + dur * 0.7);
-    src.buffer = noiseBuf;
-    lo.type = "lowpass"; lo.Q.value = 0.8;
-    lo.frequency.setValueAtTime(180, t); lo.frequency.exponentialRampToValueAtTime(900, t + dur * 0.45); lo.frequency.exponentialRampToValueAtTime(140, t + dur);
-    let air = src.connect(lo);
-    if (c.createStereoPanner) { const pan = c.createStereoPanner(); pan.pan.setValueAtTime(-0.7, t); pan.pan.linearRampToValueAtTime(0.7, t + dur); air = air.connect(pan); }
-    air.connect(env(c, t, 0.5, dur * 0.42, dur));
-    o.connect(env(c, t, 0.34, dur * 0.4, dur));
-    o.start(t); o.stop(t + dur + 0.05); src.start(t, Math.random()); src.stop(t + dur + 0.05);
-  };
-  // landing, played on the page you leave (a new page can't make sound until it's clicked): a retro burn that
-  // brakes in pulses as it drops, then the thud of the legs touching down
+  // landing: a retro burn that brakes in pulses as it drops. It starts on the page you leave; the arrival page adds
+  // the descent and the touchdown thud when the browser lets it make sound before a click (see autoplay below)
   const landing = () => {
     if (!ac()) return;
     hiss(1.6, { from: 1800, to: 140, vol: 0.32, q: 0.5, attack: 0.08 });
     tone(140, 1.6, { vol: 0.2, to: 45, attack: 0.1 });
     [0.45, 0.75, 1.0, 1.2].forEach(d => hiss(0.16, { from: 900, to: 400, vol: 0.18, q: 1.5, attack: 0.02, delay: d }));
-    tone(95, 0.5, { vol: 0.42, to: 32, delay: 1.45 });
-    hiss(0.5, { from: 500, to: 80, vol: 0.25, attack: 0.01, delay: 1.45 });
+    // Firefox (the browser with getAutoplayPolicy) won't let the next page make a sound before it's clicked,
+    // so touch down here, just before the page changes
+    if (navigator.getAutoplayPolicy) { tone(95, 0.5, { vol: 0.42, to: 32, delay: 1.45 }); hiss(0.5, { from: 500, to: 80, vol: 0.25, attack: 0.01, delay: 1.45 }); }
   };
   // launch: ignition, then the roar climbing away
   const launch = () => {
@@ -205,8 +190,7 @@
     blip: () => tone(1100 + Math.random() * 500, 0.05, { type: "square", vol: 0.05 }),
     hover: () => swoosh(0.45, 0.12),
     coin: () => { tone(1568, 0.12, { type: "triangle", vol: 0.1 }); tone(2093, 0.25, { type: "triangle", vol: 0.09, delay: 0.06 }); },
-    pass: () => { pass(); buzz(15); },
-    landing: () => { landing(); setTimeout(() => buzz(40), 1450); },
+    landing: () => landing(),
     launch: () => { launch(); buzz(20); },
     queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
     crowd: () => { hiss(2.6, { from: 500, to: 1100, vol: 0.3, q: 0.4, attack: 0.5 }); hiss(2.2, { from: 1500, to: 2600, vol: 0.12, q: 0.6, attack: 0.4, delay: 0.1 }); },
@@ -215,7 +199,7 @@
     ok: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: "triangle", vol: 0.12, delay: i * 0.08 })); buzz([15, 40, 15]); },
     whoosh: () => swoosh(1, 0.4),
     swoosh: () => swoosh(1.3, 0.45),
-    descend: () => { hiss(1.1, { from: 2400, to: 160, vol: 0.22, attack: 0.15 }); tone(320, 1, { type: "sawtooth", vol: 0.025, to: 70 }); buzz(20); },
+    descend: () => { hiss(1.3, { from: 2200, to: 150, vol: 0.3, q: 0.5, attack: 0.1 }); tone(130, 1.3, { vol: 0.2, to: 45, attack: 0.1 }); [0.35, 0.65, 0.9].forEach(d => hiss(0.16, { from: 900, to: 400, vol: 0.18, q: 1.5, attack: 0.02, delay: d })); },
     warp: () => { hiss(1.9, { from: 120, to: 4200, vol: 0.3, attack: 1.1 }); tone(55, 1.9, { type: "sawtooth", vol: 0.04, to: 220, attack: 1 }); },
     roll: () => hiss(1.1, { from: 300, to: 1400, vol: 0.16, q: 2, attack: 0.5 }),
     thud: () => { tone(110, 0.4, { vol: 0.28, to: 38 }); hiss(0.45, { from: 400, to: 90, vol: 0.18, attack: 0.01 }); buzz(30); },
@@ -223,38 +207,34 @@
     open: () => hiss(0.35, { from: 600, to: 2400, vol: 0.08, q: 3, attack: 0.05 }),
     close: () => hiss(0.3, { from: 2400, to: 600, vol: 0.07, q: 3, attack: 0.05 }),
   };
-  // engine: a spaceship drive, not a car. A clean sub-bass drone, a lowpassed rumble, a turbine whine that climbs
-  // with the throttle (with a slow drift so it never sits still), and a hiss of thrust. Call it every frame with 0..1
+  // engine: a starship drive. Two deep sines, a hair apart so they throb slowly against each other, are frequency
+  // modulated by their octave; as the throttle opens the modulation deepens, so the drone grows richer and brighter
+  // rather than climbing in pitch like a car. A dark roar of thrust swells under it. Call it every frame with 0..1
   const engine = level => {
     if (!eng) {
       const c = ac(); if (!c) return;
-      const osc = (type, gain) => { const o = c.createOscillator(), g = c.createGain(); o.type = type; g.gain.value = gain; o.connect(g); o.start(); return [o, g]; };
-      const [sub, subG] = osc("sine", 0.5), [sub2, sub2G] = osc("sine", 0.18), [whine, whineG] = osc("triangle", 0.04);
-      const drift = c.createOscillator(), driftG = c.createGain();
-      drift.frequency.value = 0.25; driftG.gain.value = 6; drift.connect(driftG).connect(whine.frequency); drift.start();
-      const rumble = c.createBufferSource(), rumbleF = c.createBiquadFilter(), rumbleG = c.createGain();
-      rumble.buffer = noiseBuf; rumble.loop = true; rumbleF.type = "lowpass"; rumbleF.frequency.value = 180; rumbleG.gain.value = 0.5;
-      rumble.connect(rumbleF).connect(rumbleG); rumble.start();
-      const thrust = c.createBufferSource(), thrustF = c.createBiquadFilter(), thrustG = c.createGain();
-      thrust.buffer = noiseBuf; thrust.loop = true; thrustF.type = "bandpass"; thrustF.Q.value = 0.7; thrustG.gain.value = 0;
-      thrust.connect(thrustF).connect(thrustG); thrust.start(0, 0.7);
-      const g = c.createGain(); g.gain.value = 0;
-      [subG, sub2G, whineG, rumbleG, thrustG].forEach(n => n.connect(g));
-      g.connect(master);
-      eng = { sub, sub2, whine, whineG, rumbleF, thrustF, thrustG, g };
+      const mod = c.createOscillator(), depth = c.createGain(), lp = c.createBiquadFilter(), g = c.createGain();
+      mod.type = "sine"; depth.gain.value = 0;
+      mod.connect(depth);
+      const cars = [1, 1.009].map(k => { const o = c.createOscillator(); o.type = "sine"; depth.connect(o.frequency); o.connect(lp); o.start(); return [o, k]; });
+      lp.type = "lowpass"; lp.Q.value = 0.7;
+      const roar = c.createBufferSource(), roarF = c.createBiquadFilter(), roarG = c.createGain();
+      roar.buffer = noiseBuf; roar.loop = true; roarF.type = "bandpass"; roarF.Q.value = 0.6; roarG.gain.value = 0;
+      roar.connect(roarF).connect(roarG).connect(g); roar.start();
+      lp.connect(g); g.gain.value = 0; g.connect(master); mod.start();
+      eng = { mod, depth, cars, lp, roarF, roarG, g };
     }
     const l = Math.max(0, Math.min(1, level));
     if (Math.abs(l - (eng.l ?? -1)) < 0.01) return; // called every frame; only reschedule when the throttle moves
     eng.l = l;
-    const t = actx.currentTime, k = 0.2;
-    eng.g.gain.setTargetAtTime(l > 0.02 ? 0.12 + l * 0.4 : 0, t, k);
-    eng.sub.frequency.setTargetAtTime(48 + l * 22, t, k);
-    eng.sub2.frequency.setTargetAtTime(96 + l * 44, t, k);
-    eng.whine.frequency.setTargetAtTime(180 + l * 520, t, k);
-    eng.whineG.gain.setTargetAtTime(0.025 + l * 0.05, t, k);
-    eng.rumbleF.frequency.setTargetAtTime(140 + l * 260, t, k);
-    eng.thrustF.frequency.setTargetAtTime(600 + l * 1800, t, k);
-    eng.thrustG.gain.setTargetAtTime(l * 0.35, t, k);
+    const t = actx.currentTime, k = 0.25, f = 42 + l * 26;
+    eng.g.gain.setTargetAtTime(l > 0.02 ? 0.045 + l * 0.42 : 0, t, k);
+    eng.cars.forEach(([o, m]) => o.frequency.setTargetAtTime(f * m, t, k));
+    eng.mod.frequency.setTargetAtTime(f * 2, t, k);
+    eng.depth.gain.setTargetAtTime(f * (0.5 + l * 2.6), t, k);
+    eng.lp.frequency.setTargetAtTime(260 + l * 1400, t, k);
+    eng.roarF.frequency.setTargetAtTime(260 + l * 1600, t, k);
+    eng.roarG.gain.setTargetAtTime(l * 0.3, t, k);
   };
   // swoosh: a wide band of air that sweeps up and back down while it pans across, like something passing close by
   const swoosh = (dur = 1.2, vol = 0.4) => {
@@ -293,7 +273,18 @@
     wake();
     actx?.resume().then(() => SOUNDS[name]?.(), () => {});
   };
-  window.sfx = { play, engine, pluck };
+  // A fresh page with no click yet. Chrome lets it make sound if you clicked on the previous page of this site, and
+  // Firefox does for sites allowed to autoplay; elsewhere this stays silent rather than queueing a burst for later
+  const autoplay = name => {
+    if (reduce || navigator.getAutoplayPolicy?.("audiocontext") === "disallowed") return;
+    wake();
+    if (actx?.state === "running") return SOUNDS[name]?.();
+    // a context the browser allows still takes a moment to start; one it blocks never resolves until a click,
+    // and by then this sound is stale, so give it a short window and drop it otherwise
+    const t0 = performance.now();
+    actx?.resume().then(() => performance.now() - t0 < 400 && SOUNDS[name]?.(), () => {});
+  };
+  window.sfx = { play, autoplay, engine, pluck };
   // silent while the tab is hidden
   const quiet = () => actx && (document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
   document.addEventListener("visibilitychange", quiet);
@@ -372,8 +363,8 @@
     store(() => sessionStorage.setItem("landed", "1"));
     const dur = quick ? 950 : 1500;
     veil.style.setProperty("--vd", dur + 100 + "ms");
-    window.sfx.play("descend");
-    countAlt(12000, 0, dur, () => { vTop.textContent = "Touchdown"; window.sfx.play("thud"); setTimeout(ready, quick ? 220 : 380); });
+    window.sfx.autoplay("descend");
+    countAlt(12000, 0, dur, () => { vTop.textContent = "Touchdown"; window.sfx.autoplay("thud"); setTimeout(ready, quick ? 220 : 380); });
   } else requestAnimationFrame(ready);
   addEventListener("pageshow", e => { if (e.persisted) document.body.classList.remove("is-leaving"); });
 

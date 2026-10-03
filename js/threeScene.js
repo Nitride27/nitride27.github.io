@@ -313,7 +313,6 @@
   document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const i = +a.dataset.goto; i === current ? land(i) : goTo(i); }));
   const setCurrent = i => {
     if (i === current) return;
-    if (current >= 0) sfx.play("pass"); // a deep doppler whoom as the planet goes by
     current = i;
     const p = PLANETS[i];
     document.body.style.setProperty("--planet", p.accent);
