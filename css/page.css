@@ -1279,9 +1279,12 @@ p {
   }
 
   .showcase {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* a long URL in a browser bar mustn't widen the column past the screen */
     gap: 0;
   }
+
+  .showcase-media > div { min-width: 0; }
+  .browser-bar b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .showcase-copy {
     display: none;

@@ -166,17 +166,21 @@
     src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
-  // engine surge: a turbine spinning up, a clean whine sweeping high over a deep sub, with a rush of air
-  const rev = () => {
+  // passing a planet: a deep doppler whoom. A low sine that falls in pitch as it goes by, under a swell of
+  // dark, filtered air, panned across. Big and soft, nothing high-pitched
+  const pass = () => {
     const c = ac(); if (!c) return;
-    const t = c.currentTime, dur = 1.5;
-    [["sine", 55, 110, 0.32], ["triangle", 220, 880, 0.07], ["sine", 440, 1760, 0.035]].forEach(([type, f0, f1, vol]) => {
-      const o = c.createOscillator();
-      o.type = type;
-      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.55); o.frequency.exponentialRampToValueAtTime(f1 * 0.7, t + dur);
-      o.connect(env(c, t, vol, 0.25, dur)); o.start(t); o.stop(t + dur + 0.05);
-    });
-    hiss(dur, { from: 200, to: 3000, vol: 0.2, q: 0.7, attack: 0.45 });
+    const t = c.currentTime, dur = 1.8, o = c.createOscillator(), lo = c.createBiquadFilter(), src = c.createBufferSource();
+    o.type = "sine";
+    o.frequency.setValueAtTime(92, t); o.frequency.setValueAtTime(92, t + dur * 0.4); o.frequency.exponentialRampToValueAtTime(48, t + dur * 0.7);
+    src.buffer = noiseBuf;
+    lo.type = "lowpass"; lo.Q.value = 0.8;
+    lo.frequency.setValueAtTime(180, t); lo.frequency.exponentialRampToValueAtTime(900, t + dur * 0.45); lo.frequency.exponentialRampToValueAtTime(140, t + dur);
+    let air = src.connect(lo);
+    if (c.createStereoPanner) { const pan = c.createStereoPanner(); pan.pan.setValueAtTime(-0.7, t); pan.pan.linearRampToValueAtTime(0.7, t + dur); air = air.connect(pan); }
+    air.connect(env(c, t, 0.5, dur * 0.42, dur));
+    o.connect(env(c, t, 0.34, dur * 0.4, dur));
+    o.start(t); o.stop(t + dur + 0.05); src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   // landing, played on the page you leave (a new page can't make sound until it's clicked): a retro burn that
   // brakes in pulses as it drops, then the thud of the legs touching down
@@ -201,7 +205,7 @@
     blip: () => tone(1100 + Math.random() * 500, 0.05, { type: "square", vol: 0.05 }),
     hover: () => swoosh(0.45, 0.12),
     coin: () => { tone(1568, 0.12, { type: "triangle", vol: 0.1 }); tone(2093, 0.25, { type: "triangle", vol: 0.09, delay: 0.06 }); },
-    rev: () => { rev(); buzz(30); },
+    pass: () => { pass(); buzz(15); },
     landing: () => { landing(); setTimeout(() => buzz(40), 1450); },
     launch: () => { launch(); buzz(20); },
     queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
@@ -239,7 +243,10 @@
       g.connect(master);
       eng = { sub, sub2, whine, whineG, rumbleF, thrustF, thrustG, g };
     }
-    const t = actx.currentTime, l = Math.max(0, Math.min(1, level)), k = 0.2;
+    const l = Math.max(0, Math.min(1, level));
+    if (Math.abs(l - (eng.l ?? -1)) < 0.01) return; // called every frame; only reschedule when the throttle moves
+    eng.l = l;
+    const t = actx.currentTime, k = 0.2;
     eng.g.gain.setTargetAtTime(l > 0.02 ? 0.12 + l * 0.4 : 0, t, k);
     eng.sub.frequency.setTargetAtTime(48 + l * 22, t, k);
     eng.sub2.frequency.setTargetAtTime(96 + l * 44, t, k);
@@ -277,7 +284,16 @@
     src.connect(g).connect(master);
     src.start();
   };
-  window.sfx = { play: name => { if (!reduce || name !== "warp") SOUNDS[name]?.(); }, engine, pluck };
+  // A sound fired by a click or tap (landing on a planet, say) may arrive while the context is still unlocking from
+  // that same gesture; wait for it rather than drop the sound. Sounds with no gesture behind them are just skipped
+  const play = name => {
+    if (reduce && name === "warp") return;
+    if (actx?.state === "running") return SOUNDS[name]?.();
+    if (!navigator.userActivation?.isActive) return;
+    wake();
+    actx?.resume().then(() => SOUNDS[name]?.(), () => {});
+  };
+  window.sfx = { play, engine, pluck };
   // silent while the tab is hidden
   const quiet = () => actx && (document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
   document.addEventListener("visibilitychange", quiet);
@@ -1523,7 +1539,7 @@
       s2.font = "700 8px system-ui, sans-serif"; s2.fillText("MANCHESTER UNITED", 110, 63.5); s2.fillText("MANCHESTER UNITED", VW - 110, 63.5);
     }
     const FLAGS = [[60, 30, "#da291c"], [170, 88, "#fff"], [270, 24, "#111"], [450, 92, "#fbe122"], [560, 34, "#fff"], [665, 86, "#da291c"]];
-    let flashes = [], jump = 0;
+    let flashes = [], jump = 0, ledW = 0;
     let us = [], them = [], phase = "aim", t = 0, aim = { x: 360, y: 230 }, charging = false, power = 0, shot = null, keeper = null, dive = null, confetti = [], raf;
 
     const say = txt => { msg.textContent = txt; };
@@ -1645,7 +1661,7 @@
       // LED board
       g.fillStyle = "#120303"; g.fillRect(0, 112, VW, 22);
       g.fillStyle = "#ff3b2f"; g.font = "600 13px ui-monospace, monospace"; g.textAlign = "left";
-      const led = "GLORY GLORY MAN UNITED  ·  RED DEVILS  ·  THEATRE OF DREAMS  ·  ", lw = g.measureText(led).width, off = -((performance.now() / 22) % lw);
+      const led = "GLORY GLORY MAN UNITED  ·  RED DEVILS  ·  THEATRE OF DREAMS  ·  ", lw = ledW || (ledW = g.measureText(led).width), off = -((performance.now() / 22) % lw);
       for (let x = off; x < VW; x += lw) g.fillText(led, x, 128);
       // pitch
       for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#237a30" : "#1f6b2a"; g.fillRect(0, 134 + i * 40, VW, 40); }

@@ -272,8 +272,8 @@
   const layout = () => {
     const portrait = innerWidth / innerHeight < 0.9;
     L = portrait
-      ? { px: 0.4, py: -7, shipX: 0, shipY: -1.75, shipScale: 0.42, fov: 66 }
-      : { px: 6.2, py: 0.2, shipX: -0.6, shipY: -1.35, shipScale: 0.58, fov: 50 };
+      ? { px: 0.4, py: -7, shipX: 0, shipY: -1.75, shipScale: 0.42, fov: 66, passX: 0.08, passY: -0.3 }
+      : { px: 6.2, py: 0.2, shipX: -0.6, shipY: -1.35, shipScale: 0.58, fov: 50, passX: 0.3, passY: -0.04 };
     camera.fov = L.fov;
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
@@ -313,7 +313,7 @@
   document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const i = +a.dataset.goto; i === current ? land(i) : goTo(i); }));
   const setCurrent = i => {
     if (i === current) return;
-    if (current >= 0) { sfx.play("rev"); sfx.play("swoosh"); } // the engines rev and the planet rushes past
+    if (current >= 0) sfx.play("pass"); // a deep doppler whoom as the planet goes by
     current = i;
     const p = PLANETS[i];
     document.body.style.setProperty("--planet", p.accent);
@@ -439,13 +439,14 @@
     setCurrent(Math.round(travel));
     if (hud.dist) hud.dist.textContent = Math.round(Math.abs(travel - Math.round(travel)) * SPACING * 1000).toLocaleString();
 
-    // docked planet sits ahead-right; upcoming ones rise into place; passing ones swing wide of the camera
+    // planets sit on the flight path: ahead they wait small near the horizon line, then grow and slide past on
+    // the side they're already on (to the right on desktop, beneath you on phones), drifting just enough to clear the ship
     planets.forEach((g, i) => {
       const baseZ = -i * SPACING - ARRIVE;
       const rel = baseZ - rig.position.z;
       const push = Math.max(0, rel + ARRIVE);
       const far = Math.max(0, -rel - ARRIVE);
-      g.position.set(L.px + push * 0.7 * (L.px >= 1 ? 1 : (i % 2 ? -1 : 1)) - far * 0.03, L.py + push * 0.15 + far * 0.22, baseZ);
+      g.position.set(L.px + push * L.passX, L.py + push * L.passY + far * 0.05, baseZ);
       const u = g.userData;
       u.mesh.rotation.y += dt * 0.04;
       if (u.clouds) u.clouds.rotation.y += dt * 0.055;
