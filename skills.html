@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Skills · Samridha Shrestha</title>
   <meta name="description" content="PyTorch, Scikit-Learn, U-Net, RAG and retrieval systems, Python, Django and Next.js.">
-  <link rel="icon" type="image/webp" href="images/Sam.webp">
-  <link rel="apple-touch-icon" href="images/Sam.webp">
+  <link rel="icon" type="image/webp" href="images/favicon.webp">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <meta property="og:site_name" content="Samridha Shrestha">
   <meta property="og:title" content="Skills · Samridha Shrestha">
   <meta property="og:description" content="PyTorch, Scikit-Learn, U-Net, RAG and retrieval systems, Python, Django and Next.js.">
@@ -20,7 +20,8 @@
 
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"></noscript>
   <link rel="stylesheet" href="css/page.css">
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
@@ -62,15 +63,25 @@
       <div class="marquee" style="border-top:0"><div class="marquee-track"><span>Hybrid search</span><span>CNNs</span><span>QGIS</span><span>Rerankers</span><span>Django</span><span>Next.js</span></div></div>
     </div>
 
+    <section class="wrap" style="padding:4rem 0 0">
+      <div class="numbers" data-reveal>
+        <div><b data-stat="skills">0</b><span>tools and skills</span></div>
+        <div><b data-stat="families">0</b><span>families</span></div>
+        <div><b data-stat="projects">0</b><span>projects using them</span></div>
+        <div><b data-count="4">4</b><span>years of building</span></div>
+      </div>
+    </section>
+
     <section class="wrap skills-split">
       <div>
         <span class="label">Skill orbit</span>
+        <div class="filters skill-filters" role="group" aria-label="Highlight a family of skills"></div>
         <div class="orbit-wrap">
           <div class="orbit-map">
             <div class="core"><img src="images/avatar.webp" alt="Samridha Shrestha"></div>
-          <div class="ring" style="--d:calc(var(--s) * 0.46); --t:50s"><button type="button" data-used="Landfill suitability mapping|Flood susceptibility mapping|World Cup 2026 prediction|Fighting game|Black hole simulation" style="--a:20deg"><span>Python</span></button><button type="button" data-used="Landfill suitability mapping" style="--a:110deg"><span>PyTorch</span></button><button type="button" data-used="Flood susceptibility mapping (Random Forest)|World Cup 2026 prediction" style="--a:200deg"><span>Scikit-Learn</span></button><button type="button" data-used="Creation Textile shopping assistant" style="--a:290deg"><span>RAG systems</span></button></div>
-          <div class="ring rev" style="--d:calc(var(--s) * 0.72); --t:80s"><button type="button" data-used="Landfill suitability mapping (96.97% accuracy)" style="--a:20deg"><span>U-Net, DeepLabV3</span></button><button type="button" data-used="Flood susceptibility mapping (95% accuracy)" style="--a:80deg"><span>CNNs</span></button><button type="button" data-used="World Cup 2026 prediction" style="--a:140deg"><span>XGBoost</span></button><button type="button" data-used="BM25 + vector retrieval in the Creation Textile chatbot" style="--a:200deg"><span>Hybrid search</span></button><button type="button" data-used="Creation Textile shopping assistant" style="--a:260deg"><span>Rerankers</span></button><button type="button" data-used="Landfill suitability mapping|Flood susceptibility mapping" style="--a:320deg"><span>QGIS</span></button></div>
-          <div class="ring" style="--d:calc(var(--s) * 0.98); --t:120s"><button type="button" data-used="Creation Textile at Octacore" style="--a:20deg"><span>Django</span></button><button type="button" data-used="Creation Textile|CargoFlow|Éclat Beauty Institute" style="--a:71deg"><span>Next.js</span></button><button type="button" data-used="Cheers chatbot at Octacore" style="--a:123deg"><span>n8n</span></button><button type="button" data-used="Creation Textile (Django)" style="--a:174deg"><span>SQL</span></button><button type="button" data-used="aquahundred.com.np|CargoFlow|Éclat Beauty Institute|This portfolio" style="--a:226deg"><span>GSAP</span></button><button type="button" data-used="This portfolio's planets and ship" style="--a:277deg"><span>three.js</span></button><button type="button" data-used="Every project on github.com/Nitride27" style="--a:329deg"><span>Git</span></button></div>
+          <div class="ring" style="--d:calc(var(--s) * 0.46); --t:50s"><button type="button" data-used="Landfill suitability mapping|Flood susceptibility mapping|World Cup 2026 prediction|Fighting game|Black hole simulation" style="--a:20deg"><span>Python</span></button><button type="button" data-used="Landfill suitability mapping" style="--a:110deg"><span>PyTorch</span></button><button type="button" data-used="Flood susceptibility mapping (Random Forest)|World Cup 2026 prediction" style="--a:200deg"><span>Scikit-Learn</span></button><button type="button" data-used="RAG shopping chatbot at Octacore" style="--a:290deg"><span>RAG systems</span></button></div>
+          <div class="ring rev" style="--d:calc(var(--s) * 0.72); --t:80s"><button type="button" data-used="Landfill suitability mapping (96.97% accuracy)" style="--a:20deg"><span>U-Net, DeepLabV3</span></button><button type="button" data-used="Flood susceptibility mapping (95% accuracy)" style="--a:80deg"><span>CNNs</span></button><button type="button" data-used="World Cup 2026 prediction" style="--a:140deg"><span>XGBoost</span></button><button type="button" data-used="BM25 + vector retrieval at Octacore" style="--a:200deg"><span>Hybrid search</span></button><button type="button" data-used="RAG shopping chatbot at Octacore" style="--a:260deg"><span>Rerankers</span></button><button type="button" data-used="Landfill suitability mapping|Flood susceptibility mapping" style="--a:320deg"><span>QGIS</span></button></div>
+          <div class="ring" style="--d:calc(var(--s) * 0.98); --t:120s"><button type="button" data-used="E-commerce backend at Octacore" style="--a:20deg"><span>Django</span></button><button type="button" data-used="E-commerce frontend at Octacore|CargoFlow|Éclat Beauty Institute" style="--a:71deg"><span>Next.js</span></button><button type="button" data-used="n8n chatbot at Octacore" style="--a:123deg"><span>n8n</span></button><button type="button" data-used="E-commerce backend at Octacore (Django)" style="--a:174deg"><span>SQL</span></button><button type="button" data-used="aquahundred.com.np|CargoFlow|Éclat Beauty Institute|This portfolio" style="--a:226deg"><span>GSAP</span></button><button type="button" data-used="This portfolio's planets and ship" style="--a:277deg"><span>three.js</span></button><button type="button" data-used="Every project on github.com/Nitride27" style="--a:329deg"><span>Git</span></button></div>
           </div>
         </div>
         <span class="label" style="margin-top:5rem">Everything I work with</span>
@@ -81,15 +92,15 @@
         </div>
         <div class="skill-row">
           <div><h3>LLMs and retrieval</h3><p>Retrieval systems that put language models into products.</p></div>
-          <ul><li data-used="Creation Textile shopping assistant">RAG systems</li><li data-used="BM25 + vector retrieval in the Creation Textile chatbot">Hybrid search</li><li data-used="Creation Textile shopping assistant">Vector databases</li><li data-used="Creation Textile shopping assistant">Rerankers</li><li data-used="Cheers chatbot at Octacore">n8n</li></ul>
+          <ul><li data-used="RAG shopping chatbot at Octacore">RAG systems</li><li data-used="BM25 + vector retrieval at Octacore">Hybrid search</li><li data-used="RAG shopping chatbot at Octacore">Vector databases</li><li data-used="RAG shopping chatbot at Octacore">Rerankers</li><li data-used="n8n chatbot at Octacore">n8n</li></ul>
         </div>
         <div class="skill-row">
           <div><h3>Languages</h3></div>
-          <ul><li data-used="Landfill suitability mapping|Flood susceptibility mapping|World Cup 2026 prediction|Fighting game|Black hole simulation">Python</li><li data-used="aquahundred.com.np|This portfolio">JavaScript</li><li data-used="StayT|GTA VI Guide|CargoFlow|Éclat Beauty Institute">TypeScript</li><li data-used="Creation Textile (Django)">SQL</li><li data-used="Coursework at ACEM">C</li><li data-used="Contact management system">C++</li><li data-used="aquahundred.com.np|This portfolio|Anime Studio">HTML and CSS</li></ul>
+          <ul><li data-used="Landfill suitability mapping|Flood susceptibility mapping|World Cup 2026 prediction|Fighting game|Black hole simulation">Python</li><li data-used="aquahundred.com.np|This portfolio">JavaScript</li><li data-used="StayT|GTA VI Guide|CargoFlow|Éclat Beauty Institute">TypeScript</li><li data-used="E-commerce backend at Octacore (Django)">SQL</li><li data-used="Coursework at ACEM">C</li><li data-used="Contact management system">C++</li><li data-used="aquahundred.com.np|This portfolio|Anime Studio">HTML and CSS</li></ul>
         </div>
         <div class="skill-row">
           <div><h3>Shipping it</h3><p>The web stack that turns models into products people use.</p></div>
-          <ul><li data-used="Creation Textile at Octacore">Django</li><li data-used="Creation Textile|CargoFlow|Éclat Beauty Institute">Next.js</li><li data-used="GTA VI Guide">React</li><li data-used="CargoFlow|Éclat Beauty Institute">Tailwind</li><li data-used="aquahundred.com.np|CargoFlow|Éclat Beauty Institute|This portfolio">GSAP</li><li data-used="This portfolio's planets and ship">three.js</li><li data-used="Aqua Hundred depot map">Leaflet</li><li data-used="aquahundred.com.np">Cloudflare Pages</li></ul>
+          <ul><li data-used="E-commerce backend at Octacore">Django</li><li data-used="E-commerce frontend at Octacore|CargoFlow|Éclat Beauty Institute">Next.js</li><li data-used="GTA VI Guide">React</li><li data-used="CargoFlow|Éclat Beauty Institute">Tailwind</li><li data-used="aquahundred.com.np|CargoFlow|Éclat Beauty Institute|This portfolio">GSAP</li><li data-used="This portfolio's planets and ship">three.js</li><li data-used="Aqua Hundred depot map">Leaflet</li><li data-used="aquahundred.com.np">Cloudflare Pages</li></ul>
         </div>
         <div class="skill-row">
           <div><h3>Tools</h3></div>
@@ -103,8 +114,12 @@
       </div>
       <aside class="used-in panel" aria-live="polite">
         <span class="label">Used in</span>
+        <span class="used-cat">Deep learning and ML</span>
         <h3 class="used-title">PyTorch</h3>
+        <div class="used-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="used-count">1 project</p>
         <ul class="used-list"><li>Landfill suitability mapping</li></ul>
+        <div class="used-related"><small>Same family</small><div class="chips"></div></div>
       </aside>
     </section>
 
@@ -118,6 +133,7 @@
     <div class="meta">
       <span>© 2026 Samridha Shrestha</span>
       <a class="text-link" href="mailto:samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+      <a class="text-link" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">Android apps ↗</a>
       <button class="term-open" type="button" data-terminal>Captain's log <kbd>`</kbd></button>
     </div>
     <pre class="ascii" aria-hidden="true"></pre>

@@ -54,7 +54,7 @@ window.Space = (() => {
     lava: { glow: 0xff6a2a, base: 0x2a1c16, glowMap: true, bump: 1.6 },
     gas: { glow: 0xffc27a, base: 0xc87a3c, rings: true },
     desert: { glow: 0xff8a5c, base: 0xb4461c, moon: true, bump: 1.6 },
-    ocean: { glow: 0x3d86ff, base: 0x0656c0, clouds: "b", water: true },
+    ocean: { glow: 0xb47bff, base: 0x4a1d96, clouds: "b", water: true },
     moon: { base: 0x77777a, bump: 3 },
   };
 

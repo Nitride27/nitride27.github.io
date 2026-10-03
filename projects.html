@@ -5,22 +5,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Projects · Samridha Shrestha</title>
-  <meta name="description" content="Landfill and flood mapping with deep learning, a RAG shopping assistant, client websites and apps.">
-  <link rel="icon" type="image/webp" href="images/Sam.webp">
-  <link rel="apple-touch-icon" href="images/Sam.webp">
+  <meta name="description" content="Landfill and flood mapping with deep learning, Android apps, client websites and games.">
+  <link rel="icon" type="image/webp" href="images/favicon.webp">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <meta property="og:site_name" content="Samridha Shrestha">
   <meta property="og:title" content="Projects · Samridha Shrestha">
-  <meta property="og:description" content="Landfill and flood mapping with deep learning, a RAG shopping assistant, client websites and apps.">
+  <meta property="og:description" content="Landfill and flood mapping with deep learning, Android apps, client websites and games.">
   <meta property="og:image" content="https://samridhashrestha.com.np/images/og.jpg">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Projects · Samridha Shrestha">
-  <meta name="twitter:description" content="Landfill and flood mapping with deep learning, a RAG shopping assistant, client websites and apps.">
+  <meta name="twitter:description" content="Landfill and flood mapping with deep learning, Android apps, client websites and games.">
   <meta name="twitter:image" content="https://samridhashrestha.com.np/images/og.jpg">
 
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"></noscript>
   <link rel="stylesheet" href="css/page.css">
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
@@ -59,9 +60,9 @@
 
     <section class="wrap" style="padding:0 0 2rem">
       <div class="numbers" data-reveal>
-        <div><b data-count="14">14</b><span>projects here</span></div>
+        <div><b data-count="13">13</b><span>projects here</span></div>
         <div><b data-count="96.97" data-decimals="2">96.97</b><span>best model accuracy, %</span></div>
-        <div><b data-count="3">3</b><span>sites in production</span></div>
+        <div><b data-count="3">3</b><span>sites and apps live</span></div>
         <div><b data-count="4">4</b><span>years of building, 2023–2026</span></div>
       </div>
     </section>
@@ -89,24 +90,25 @@
             <a class="text-link arrow" href="https://github.com/hawkeyyyy/Flood_Susceptibility_Mapping_KTM" target="_blank" rel="noopener">Code on GitHub</a>
           </article>
           <article>
-            <span class="label">RAG system + full stack · 2026</span>
-            <h3>Creation Textile and its shopping assistant</h3>
-            <p>A pashmina store built on Django and Next.js at Octacore. The chatbot answers product questions with hybrid BM25 and vector retrieval, a reranker and conversation memory.</p>
-            
-            <a class="text-link arrow" href="https://creationtextile.com.np" target="_blank" rel="noopener">Visit the site</a>
-          </article>
-          <article>
             <span class="label">Client site · 2026</span>
             <h3>Aqua Hundred</h3>
             <p>Marketing site for a Nepali mineral water brand: scroll animation, a product carousel, a multi-step order form and a depot map. Runs on Cloudflare Pages.</p>
-            
+            <ul class="tags"><li>JavaScript</li><li>GSAP</li><li>Leaflet</li><li>Cloudflare</li></ul>
+            <p class="credit">Freelance, 2026</p>
             <a class="text-link arrow" href="https://aquahundred.com.np" target="_blank" rel="noopener">Visit the site</a>
+          </article>
+          <article>
+            <span class="label">Android apps · 2026</span>
+            <h3>apps.samridhashrestha.com.np</h3>
+            <p>Small Android apps that do one thing well. StayT and GTA 6 Guide are on Google Play; Anime Studio, a Wear OS watch face, is coming. No accounts, data stays on the phone.</p>
+            <div class="metrics"><div><b>2</b><span>on Google Play</span></div><div><b>1</b><span>coming soon</span></div></div>
+            <a class="text-link arrow" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">See the apps</a>
           </article>
         </div>
       </div>
       <div class="showcase-media">
         <div>
-          <figure data-clip class="on"><img src="images/LandFill.png" alt="Landfill suitability map of Kathmandu Valley" loading="lazy"></figure>
+          <figure data-clip class="on" data-lens><img src="images/LandFill.webp" alt="Landfill suitability map of Kathmandu Valley" loading="lazy"><figcaption aria-hidden="true">Hover to inspect the map</figcaption></figure>
           <div class="mobile-copy">
             <span class="label" style="margin:0">Deep learning · 2025–2026</span>
             <h3>Landfill site suitability mapping</h3>
@@ -115,7 +117,7 @@
           </div>
         </div>
         <div>
-          <figure data-clip><img src="images/flood.jpeg" alt="Flood susceptibility map of Kathmandu Valley" loading="lazy"></figure>
+          <figure data-clip data-lens><img src="images/flood.webp" alt="Flood susceptibility map of Kathmandu Valley" loading="lazy"><figcaption aria-hidden="true">Hover to inspect the map</figcaption></figure>
           <div class="mobile-copy">
             <span class="label" style="margin:0">Deep learning · 2024–2025</span>
             <h3>Flood susceptibility mapping</h3>
@@ -124,21 +126,21 @@
           </div>
         </div>
         <div>
-          <figure data-clip><img src="images/creationtextile.webp" alt="Creation Textile homepage" loading="lazy"></figure>
-          <div class="mobile-copy">
-            <span class="label" style="margin:0">RAG system + full stack · 2026</span>
-            <h3>Creation Textile and its shopping assistant</h3>
-            <p>A pashmina store built on Django and Next.js at Octacore. The chatbot answers product questions with hybrid BM25 and vector retrieval, a reranker and conversation memory.</p>
-            <a class="text-link arrow" href="https://creationtextile.com.np" target="_blank" rel="noopener">Visit the site</a>
-          </div>
-        </div>
-        <div>
-          <figure data-clip><img src="images/aquahundred.webp" alt="Aqua Hundred homepage" loading="lazy"></figure>
+          <figure data-clip class="site"><div class="browser"><span class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><b>aquahundred.com.np</b><em>live</em></span><a class="scroller" href="https://aquahundred.com.np" target="_blank" rel="noopener" role="img" aria-label="Aqua Hundred, full page" style="background-image:url(images/full-aquahundred.webp)"></a></div><figcaption aria-hidden="true">Hover to scroll the live page</figcaption></figure>
           <div class="mobile-copy">
             <span class="label" style="margin:0">Client site · 2026</span>
             <h3>Aqua Hundred</h3>
             <p>Marketing site for a Nepali mineral water brand: scroll animation, a product carousel, a multi-step order form and a depot map. Runs on Cloudflare Pages.</p>
             <a class="text-link arrow" href="https://aquahundred.com.np" target="_blank" rel="noopener">Visit the site</a>
+          </div>
+        </div>
+        <div>
+          <figure data-clip class="site"><div class="browser"><span class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><b>apps.samridhashrestha.com.np</b><em>live</em></span><a class="scroller" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener" role="img" aria-label="apps.samridhashrestha.com.np, full page" style="background-image:url(images/full-apps.webp)"></a></div><figcaption aria-hidden="true">Hover to scroll the live page</figcaption></figure>
+          <div class="mobile-copy">
+            <span class="label" style="margin:0">Android apps · 2026</span>
+            <h3>apps.samridhashrestha.com.np</h3>
+            <p>Small Android apps that do one thing well. StayT and GTA 6 Guide are on Google Play; Anime Studio is coming.</p>
+            <a class="text-link arrow" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">See the apps</a>
           </div>
         </div>
       </div>
@@ -147,27 +149,26 @@
     <section class="wrap">
       <span class="label">Everything else</span>
       <h2 class="title" data-split>Other projects</h2>
+      <p class="lede" style="margin-bottom:2rem">Apps, sites, games and experiments I built myself. The Android apps have their own home at <a class="text-link" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">apps.samridhashrestha.com.np</a>.</p>
       <div class="filters" role="group" aria-label="Filter projects">
         <button type="button" data-filter="all" aria-pressed="true">All</button>
         <button type="button" data-filter="ai" aria-pressed="false">AI / ML</button>
-        <button type="button" data-filter="web" aria-pressed="false">Web</button>
         <button type="button" data-filter="app" aria-pressed="false">Apps</button>
+        <button type="button" data-filter="web" aria-pressed="false">Web</button>
         <button type="button" data-filter="game" aria-pressed="false">Games</button>
         <button type="button" data-filter="cpp" aria-pressed="false">C++</button>
       </div>
-      <ul class="index-list">
-          <li data-cat="ai" data-img="" data-tint="#0f5132" data-glyph="WC26"><a href="https://github.com/Nitride27/worldcup2026_prediction" target="_blank" rel="noopener"><h3><span class="num">05</span>World Cup 2026 prediction</h3><p>Predicts every match from group stage to final with Random Forest and XGBoost, tuned with Optuna and explained with SHAP.</p><span class="kind">ML · Python · 2026</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="ai" data-img="" data-tint="#7a3d00" data-glyph="n8n"><div class="row"><h3><span class="num">06</span>Cheers chatbot</h3><p>Customer chatbot for cheers.com.np, built as n8n workflows at Octacore.</p><span class="kind">Automation · n8n · 2026</span><span class="go">Private</span></div></li>
-          <li data-cat="web" data-img="" data-tint="#0b4a6e" data-glyph="Cargo"><a href="https://github.com/Nitride27/cargo-website" target="_blank" rel="noopener"><h3><span class="num">07</span>CargoFlow</h3><p>Logistics marketing site on Next.js 15, Tailwind v4 and GSAP ScrollTrigger.</p><span class="kind">Web · Next.js · 2026</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="web" data-img="" data-tint="#6e4a1b" data-glyph="Éclat"><a href="https://github.com/Nitride27/beautyinstitute-website" target="_blank" rel="noopener"><h3><span class="num">08</span>Éclat Beauty Institute</h3><p>Marketing and enrolment site on Next.js 15, Tailwind, GSAP and Framer Motion.</p><span class="kind">Web · Next.js · 2026</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="app" data-img="" data-tint="#3b2a7a" data-glyph="StayT"><a href="https://github.com/Nitride27/StayT" target="_blank" rel="noopener"><h3><span class="num">09</span>StayT</h3><p>A task-based app blocker for staying focused.</p><span class="kind">App · TypeScript · 2026</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="app" data-img="" data-tint="#7a1f4a" data-glyph="VI"><div class="row"><h3><span class="num">10</span>GTA VI Guide</h3><p>A guide app for GTA VI, written in React.</p><span class="kind">App · React · 2026</span><span class="go">Private</span></div></li>
-          <li data-cat="app" data-img="" data-tint="#6a1f6e" data-glyph="アニメ"><div class="row"><h3><span class="num">11</span>Anime Studio</h3><p>An anime watch face app with full customisation.</p><span class="kind">App · Watch face · 2026</span><span class="go">Private</span></div></li>
-          <li data-cat="game" data-img="images/fighting_game.jpeg" data-tint="" data-glyph=""><a href="https://github.com/Nitride27/Fighting-game" target="_blank" rel="noopener"><h3><span class="num">12</span>Fighting game</h3><p>A Tekken-style fighter with animations, collision detection and responsive controls.</p><span class="kind">Game · Pygame · 2023</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="game" data-img="" data-tint="#1a1030" data-glyph="●"><a href="https://github.com/Nitride27/Blackhole-Simulation" target="_blank" rel="noopener"><h3><span class="num">13</span>Black hole simulation</h3><p>A 2D black hole simulation.</p><span class="kind">Sim · Pygame · 2024</span><span class="go">GitHub ↗</span></a></li>
-          <li data-cat="cpp" data-img="" data-tint="#0e3b4a" data-glyph="C++"><a href="https://github.com/Nitride27/Contact_management_system" target="_blank" rel="noopener"><h3><span class="num">14</span>Contact management system</h3><p>A console contact book in C++: add, search, edit and delete records.</p><span class="kind">Tool · C++ · 2023</span><span class="go">GitHub ↗</span></a></li>
+      <ul class="proj-grid">
+        <li data-cat="ai"><a class="proj-card panel" href="https://github.com/Nitride27/worldcup2026_prediction" target="_blank" rel="noopener"><div class="proj-thumb tile" style="--tint:#0f5132" aria-hidden="true"><span>WC26</span></div><div class="proj-body"><span class="proj-kind">ML · Python · 2026</span><h3>World Cup 2026 prediction</h3><p>Predicts every match from group stage to final with Random Forest and XGBoost, tuned with Optuna and explained with SHAP.</p><span class="proj-foot"><span class="num">05</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="app"><a class="proj-card panel" href="https://apps.samridhashrestha.com.np/stayt/" target="_blank" rel="noopener"><div class="proj-thumb"><img src="images/stayt.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Android · 2026</span><h3>StayT</h3><p>A task-based app blocker for staying focused. On Google Play.</p><span class="proj-foot"><span class="num">06</span><span class="go">Details ↗</span></span></div></a></li>
+        <li data-cat="app"><a class="proj-card panel" href="https://apps.samridhashrestha.com.np/gta6guide/" target="_blank" rel="noopener"><div class="proj-thumb"><img src="images/gta6guide.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Android · 2026</span><h3>GTA 6 Guide</h3><p>An offline-first companion for GTA VI: countdown, story, Leonida map and gameplay. On Google Play.</p><span class="proj-foot"><span class="num">07</span><span class="go">Details ↗</span></span></div></a></li>
+        <li data-cat="app"><a class="proj-card panel" href="https://apps.samridhashrestha.com.np/animestudio/" target="_blank" rel="noopener"><div class="proj-thumb"><img src="images/animestudio.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Wear OS · 2026</span><h3>Anime Studio</h3><p>Living anime watch faces: the town follows the season and the hour. Coming to Google Play.</p><span class="proj-foot"><span class="num">08</span><span class="go">Details ↗</span></span></div></a></li>
+        <li data-cat="web"><a class="proj-card panel" href="https://github.com/Nitride27/cargo-website" target="_blank" rel="noopener"><div class="proj-thumb tile" style="--tint:#0b4a6e" aria-hidden="true"><span>CARGO</span></div><div class="proj-body"><span class="proj-kind">Web · Next.js · 2026</span><h3>CargoFlow</h3><p>Logistics marketing site on Next.js 15, Tailwind v4 and GSAP ScrollTrigger.</p><span class="proj-foot"><span class="num">09</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="web"><a class="proj-card panel" href="https://github.com/Nitride27/beautyinstitute-website" target="_blank" rel="noopener"><div class="proj-thumb tile" style="--tint:#6e4a1b" aria-hidden="true"><span>ÉCLAT</span></div><div class="proj-body"><span class="proj-kind">Web · Next.js · 2026</span><h3>Éclat Beauty Institute</h3><p>Marketing and enrolment site on Next.js 15, Tailwind, GSAP and Framer Motion.</p><span class="proj-foot"><span class="num">10</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="game"><a class="proj-card panel" href="https://github.com/Nitride27/Fighting-game" target="_blank" rel="noopener"><div class="proj-thumb"><img src="images/fighting_game.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Game · Pygame · 2023</span><h3>Fighting game</h3><p>A Tekken-style fighter with animations, collision detection and responsive controls.</p><span class="proj-foot"><span class="num">11</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="game"><a class="proj-card panel" href="https://github.com/Nitride27/Blackhole-Simulation" target="_blank" rel="noopener"><div class="proj-thumb tile" style="--tint:#2a1650" aria-hidden="true"><span>●</span></div><div class="proj-body"><span class="proj-kind">Sim · Pygame · 2024</span><h3>Black hole simulation</h3><p>A 2D black hole simulation: light bending around a mass you can move.</p><span class="proj-foot"><span class="num">12</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="cpp"><a class="proj-card panel" href="https://github.com/Nitride27/Contact_management_system" target="_blank" rel="noopener"><div class="proj-thumb tile" style="--tint:#0e3b4a" aria-hidden="true"><span>C++</span></div><div class="proj-body"><span class="proj-kind">Tool · C++ · 2023</span><h3>Contact management system</h3><p>A console contact book: add, search, edit and delete records.</p><span class="proj-foot"><span class="num">13</span><span class="go">GitHub ↗</span></span></div></a></li>
       </ul>
-      <div class="row-preview" aria-hidden="true"><div class="row-preview-inner"></div></div>
     </section>
 
     <a href="skills.html" class="next">
@@ -180,6 +181,7 @@
     <div class="meta">
       <span>© 2026 Samridha Shrestha</span>
       <a class="text-link" href="mailto:samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+      <a class="text-link" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">Android apps ↗</a>
       <button class="term-open" type="button" data-terminal>Captain's log <kbd>`</kbd></button>
     </div>
     <pre class="ascii" aria-hidden="true"></pre>

@@ -27,7 +27,7 @@
 }
 
 .welcome .display {
-  font-size: clamp(2.6rem, 6.4vw, 5.6rem);
+  font-size: clamp(2.2rem, 5.2vw, 4.6rem);
 }
 
 .welcome .lede {
@@ -57,9 +57,11 @@
 }
 
 .planet-panel h2 {
-  font-weight: 300;
-  font-size: clamp(2.4rem, 5vw, 4rem);
-  letter-spacing: -.04em;
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -147,18 +149,89 @@
   top: 0;
   left: 0;
   z-index: 260;
-  padding: .4rem .8rem;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: .8rem;
+  width: 300px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(10, 10, 10, .88);
+  border: 1px solid color-mix(in srgb, var(--planet) 45%, transparent);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--planet) 20%, transparent), 0 30px 60px rgba(0, 0, 0, .6);
+  backdrop-filter: blur(14px);
+  color: var(--ink);
   pointer-events: none;
   opacity: 0;
-  transition: opacity .2s;
+  transition: opacity .25s;
 }
 
-.planet-tip.show {
-  opacity: 1;
+.planet-tip.show { opacity: 1; }
+.planet-tip.show .tip-body > * { animation: tip-in .5s var(--ease) both; }
+.planet-tip.show .tip-body > :nth-child(2) { animation-delay: .04s; }
+.planet-tip.show .tip-body > :nth-child(3) { animation-delay: .08s; }
+.planet-tip.show .tip-body > :nth-child(4) { animation-delay: .12s; }
+.planet-tip.show .tip-body > :nth-child(5) { animation-delay: .16s; }
+
+@keyframes tip-in { from { opacity: 0; transform: translateY(6px); } }
+
+.tip-img {
+  height: 110px;
+  background-size: cover;
+  background-position: center 30%;
+  border-bottom: 1px solid var(--line);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+
+.tip-body { padding: 1rem 1.1rem 1.1rem; }
+
+.tip-body small {
+  display: block;
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--planet);
+}
+
+.tip-body b {
+  display: block;
+  margin: .35rem 0 .5rem;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+}
+
+.tip-stat { font-size: .82rem; color: var(--muted); margin-bottom: .7rem; }
+.tip-stat strong { font-family: var(--display); font-weight: 500; color: var(--ink); margin-right: .3rem; }
+
+.tip-body ul { list-style: none; border-top: 1px dashed var(--line); }
+
+.tip-body li {
+  padding: .45rem 0 .45rem 1rem;
+  border-bottom: 1px dashed var(--line);
+  font-size: .82rem;
+  color: var(--muted);
+  position: relative;
+}
+
+.tip-body li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  background: var(--planet);
+  transform: rotate(45deg);
+}
+
+.tip-go {
+  display: block;
+  margin-top: .8rem;
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--planet);
 }
 
 /* clean frame for the 1200x630 social card */

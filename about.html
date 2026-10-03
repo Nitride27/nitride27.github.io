@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About · Samridha Shrestha</title>
   <meta name="description" content="Education at ACEM and St. Xavier's College, certificates, and life outside work.">
-  <link rel="icon" type="image/webp" href="images/Sam.webp">
-  <link rel="apple-touch-icon" href="images/Sam.webp">
+  <link rel="icon" type="image/webp" href="images/favicon.webp">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <meta property="og:site_name" content="Samridha Shrestha">
   <meta property="og:title" content="About · Samridha Shrestha">
   <meta property="og:description" content="Education at ACEM and St. Xavier's College, certificates, and life outside work.">
@@ -20,7 +20,8 @@
 
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"></noscript>
   <link rel="stylesheet" href="css/page.css">
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
   <script defer src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
@@ -53,7 +54,7 @@
       <div>
         <span class="label">05 / About</span>
         <h1 class="display" data-split>About</h1>
-        <p class="lede" data-reveal>Where I studied, what I've picked up along the way, and what I do off the clock.</p>
+        <p class="lede" data-reveal>Where I studied, the flight log so far, and what I do off the clock.</p>
       </div>
     </header>
 
@@ -61,7 +62,7 @@
       <span class="label">Education</span>
       <div class="edu">
         <article class="panel" data-reveal>
-          <div class="media" data-clip><img src="images/acem.jpeg" alt="ACEM campus" data-speed="0.5" loading="lazy"></div>
+          <div class="media" data-clip><img src="images/acem.webp" alt="ACEM campus" data-speed="0.5" loading="lazy"></div>
           <div class="body">
             <span class="when">2021 – 2026</span>
             <h3>Advanced College of Engineering and Management</h3>
@@ -70,7 +71,7 @@
           </div>
         </article>
         <article class="panel" data-reveal>
-          <div class="media" data-clip><img src="images/st.xaviers.jpg" alt="St. Xavier's College campus" data-speed="0.5" loading="lazy"></div>
+          <div class="media" data-clip><img src="images/st.xaviers.webp" alt="St. Xavier's College campus" data-speed="0.5" loading="lazy"></div>
           <div class="body">
             <span class="when">2019 – 2021</span>
             <h3>St. Xavier's College</h3>
@@ -81,17 +82,71 @@
     </section>
 
     <section class="wrap" style="padding-top:0">
+      <span class="label">Flight log</span>
+      <h2 class="title" data-split>Seven years, eight stops</h2>
+      <p class="lede" style="margin-bottom:2.5rem">Click a stop, or use ← → once the log is focused.</p>
+      <div class="flight" tabindex="0" aria-label="Flight log timeline">
+        <div class="flight-track"><i class="flight-fill"></i>
+          <button type="button" data-when="2019" data-title="St. Xavier's College" data-text="Plus Two at St. Xavier's College, Maitighar. Where science and computers first clicked.">2019</button>
+          <button type="button" data-when="2021" data-title="Computer Engineering at ACEM" data-text="Started the B.E. at Advanced College of Engineering and Management, Kalanki.">2021</button>
+          <button type="button" data-when="2023" data-title="First game, first design workshop" data-text="Built a Tekken-style fighting game in Pygame, and took a Figma workshop on vector and interface basics.">2023</button>
+          <button type="button" data-when="2024" data-title="Flood susceptibility mapping" data-text="Minor project on Kathmandu Valley floods. The CNN reached 95%, ahead of a Random Forest. Certificate in Python with Data Science.">2024</button>
+          <button type="button" data-when="2025" data-title="Landfill suitability mapping" data-text="Final-year project. U-Net, ResU-Net and DeepLabV3 on geospatial layers; the custom U-Net hit 96.97% accuracy and 0.92 mean IoU.">2025</button>
+          <button type="button" data-when="2026" data-title="Freelance and Google Play" data-text="Built aquahundred.com.np for a client, and shipped StayT and GTA 6 Guide to Google Play.">2026</button>
+          <button type="button" data-when="Jun 2026" data-title="Joined Octacore Solutions" data-text="Joined as a full-stack intern: e-commerce APIs and a RAG shopping assistant.">Jun</button>
+          <button type="button" data-when="24 Aug 2026" data-title="Software engineer, full-time" data-text="Went full-time at Octacore Solutions as a software engineer.">Aug</button>
+        </div>
+        <div class="flight-card panel" aria-live="polite"><small class="flight-when"></small><h3 class="flight-title"></h3><p class="flight-text"></p></div>
+      </div>
+    </section>
+
+    <section class="wrap" style="padding-top:0">
       <span class="label">Certificates</span>
-      <ul class="rows" data-reveal>
-          <li><span>Python with Data Science<br><small style='color:var(--muted)'>Data handling with pandas and NumPy</small></span><span>2024</span></li>
-          <li><span>Figma Workshop<br><small style='color:var(--muted)'>Vector graphics and interface basics</small></span><span>2023</span></li>
-      </ul>
+      <div class="badges">
+        <div class="badge panel" data-tilt data-reveal>
+          <span class="badge-seal" aria-hidden="true">PY</span>
+          <div><h3>Python with Data Science</h3><p>Data handling with pandas and NumPy.</p></div>
+          <span class="badge-year">2024</span>
+        </div>
+        <div class="badge panel" data-tilt data-reveal>
+          <span class="badge-seal" aria-hidden="true">FG</span>
+          <div><h3>Figma Workshop</h3><p>Vector graphics and interface basics.</p></div>
+          <span class="badge-year">2023</span>
+        </div>
+      </div>
     </section>
 
     <section class="wrap">
       <span class="label">Off duty</span>
       <p class="statement" data-scrub-words>Outside work it's music, gaming, sports and anime. They feed my
         imagination and the way I approach design.</p>
+      <div class="duty-grid">
+        <button class="duty panel" type="button" data-duty="music" data-tilt>
+          <span class="duty-glyph" aria-hidden="true">♫</span>
+          <strong>Music</strong>
+          <p>The soundtrack on this ship is from Interstellar.</p>
+          <span class="duty-act">Toggle the music</span>
+        </button>
+        <button class="duty panel" type="button" data-duty="game" data-tilt>
+          <span class="duty-glyph" aria-hidden="true">◈</span>
+          <strong>Gaming</strong>
+          <p>Gaming is why my first project was a fighting game.</p>
+          <span class="duty-act">Play asteroid blaster</span>
+        </button>
+        <button class="duty panel" type="button" data-duty="sports" data-tilt>
+          <span class="duty-glyph" aria-hidden="true">◎</span>
+          <strong>Sports</strong>
+          <p>Time away from the screen. Kick the ball around.</p>
+          <span class="duty-act">Kick it</span>
+          <i class="ball" aria-hidden="true"></i>
+        </button>
+        <button class="duty panel" type="button" data-duty="anime" data-tilt>
+          <span class="duty-glyph" aria-hidden="true">✦</span>
+          <strong>Anime</strong>
+          <p>It turned into Anime Studio, a living Wear OS watch face.</p>
+          <span class="duty-act">See Anime Studio ↗</span>
+        </button>
+      </div>
     </section>
 
     <a href="contact.html" class="next">
@@ -104,6 +159,7 @@
     <div class="meta">
       <span>© 2026 Samridha Shrestha</span>
       <a class="text-link" href="mailto:samridhashrestha10@gmail.com">samridhashrestha10@gmail.com</a>
+      <a class="text-link" href="https://apps.samridhashrestha.com.np" target="_blank" rel="noopener">Android apps ↗</a>
       <button class="term-open" type="button" data-terminal>Captain's log <kbd>`</kbd></button>
     </div>
     <pre class="ascii" aria-hidden="true"></pre>

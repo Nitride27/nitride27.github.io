@@ -89,8 +89,9 @@ const PAINT = {
   },
   ocean: (x, y, z) => {
     const n = fbm(x * 2, y * 2, z * 2, 61);
-    return n > 0.67 ? [...ramp(R([0, 0xe2cf98], [0.25, 0x3e8a44], [1, 0x2a5a30]), (n - 0.67) / 0.33), 255]
-      : [...ramp(R([0, 0x001a52], [0.7, 0x0656c0], [1, 0x1e96ee]), n / 0.67), 0];
+    // violet sea with teal crystal islands, so it never reads as a second Earth next to terran
+    return n > 0.64 ? [...ramp(R([0, 0xf2c9ec], [0.2, 0x2fc2a8], [1, 0x145f5a]), (n - 0.64) / 0.36), 255]
+      : [...ramp(R([0, 0x14053a], [0.65, 0x5321b0], [1, 0xa06cff]), n / 0.64), 0];
   },
   moon: (x, y, z) => {
     const n = fbm(x * 4, y * 4, z * 4, 99), c = craters(MOON_C, x, y, z), mare = fbm(x * 1.2, y * 1.2, z * 1.2, 5, 3) > 0.58 ? -0.18 : 0;

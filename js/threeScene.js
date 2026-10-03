@@ -7,12 +7,21 @@
 
   const PLANETS = [
     { id: "introduction", name: "Introduction", blurb: "Who I am and what I'm working on.", r: 3.2, type: "ice", accent: "#9cc9dc" },
-    { id: "experience", name: "Experience", blurb: "Octacore internship and freelance client work.", r: 3.6, type: "terran", accent: "#7fa9dd" },
+    { id: "experience", name: "Experience", blurb: "Full-time at Octacore, plus freelance client work.", r: 3.6, type: "terran", accent: "#7fa9dd" },
     { id: "projects", name: "Projects", blurb: "Deep learning research, RAG systems and shipped products.", r: 3.0, type: "lava", accent: "#e08a5c" },
     { id: "skills", name: "Skills", blurb: "Languages, frameworks and AI tooling.", r: 4.6, type: "gas", accent: "#d6b289" },
     { id: "about", name: "About", blurb: "Education, certificates and life off the ship.", r: 3.0, type: "desert", accent: "#d48e68" },
-    { id: "contact", name: "Contact", blurb: "Email, phone, GitHub and LinkedIn.", r: 3.8, type: "ocean", accent: "#6f9ae0" },
+    { id: "contact", name: "Contact", blurb: "Email, phone, GitHub and LinkedIn.", r: 3.8, type: "ocean", accent: "#b392f0" },
   ];
+  // what the hover card shows for each page: a headline stat and three things you'll find there
+  const PEEK = {
+    introduction: { stat: ["96.97%", "best model accuracy"], img: "images/Samridha.webp", items: ["Who I am, in one screen", "What I build: ML, RAG, apps", "My Android apps on Google Play"] },
+    experience: { stat: ["Since Jun 2026", "software engineer at Octacore"], img: "images/octacore.webp", items: ["Octacore Solutions, full-time", "E-commerce APIs + RAG chatbot", "Aqua Hundred, freelance"] },
+    projects: { stat: ["13", "projects, 4 showcased"], img: "images/LandFill.webp", items: ["Landfill + flood mapping with U-Net / CNN", "Live sites you can scroll through", "Apps, games and sims"] },
+    skills: { stat: ["35", "tools across 6 families"], img: "", items: ["An orbit of skills to explore", "Every skill linked to real projects", "PyTorch, RAG, Django, Next.js"] },
+    about: { stat: ["B.E.", "Computer Engineering, 2026"], img: "images/acem.webp", items: ["ACEM and St. Xavier's", "Certificates", "Life off the ship"] },
+    contact: { stat: ["UTC+5:45", "Kathmandu"], img: "", items: ["Send a transmission", "Email, phone, GitHub, LinkedIn", "Copy any address in one click"] },
+  };
   const N = PLANETS.length;
   const SPACING = 80;   // distance between planets along the flight path
   const ARRIVE = 26;    // how far ahead the current planet sits when docked
@@ -278,6 +287,15 @@
   // ======================
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), mouseSmooth = new THREE.Vector2();
   const tip = $(".planet-tip");
+  const fillTip = i => {
+    const p = PLANETS[i], k = PEEK[p.id];
+    tip.dataset.i = i;
+    tip.style.setProperty("--planet", p.accent);
+    tip.innerHTML = (k.img ? `<div class="tip-img" style="background-image:url(${k.img})"></div>` : "") +
+      `<div class="tip-body"><small>${String(i + 1).padStart(2, "0")} / 06 · ${p.type} world</small><b>${p.name}</b>` +
+      `<p class="tip-stat"><strong>${k.stat[0]}</strong> ${k.stat[1]}</p><ul>${k.items.map(t => `<li>${t}</li>`).join("")}</ul>` +
+      `<span class="tip-go">Click to land →</span></div>`;
+  };
   let hovered = null;
   addEventListener("pointermove", e => {
     mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
@@ -287,8 +305,15 @@
     document.body.style.cursor = hovered !== null ? "pointer" : "";
     tip.classList.toggle("show", hovered !== null);
     if (hovered !== null) {
-      tip.textContent = "Land on " + PLANETS[hovered].name;
-      tip.style.transform = `translate(${e.clientX + 18}px, ${e.clientY + 18}px)`;
+      if (tip.dataset.i !== String(hovered)) fillTip(hovered);
+      // park the card beside the planet's on-screen disc so the planet itself stays visible
+      const g = planets[hovered], c = g.getWorldPosition(new THREE.Vector3()), dist = c.distanceTo(camera.getWorldPosition(new THREE.Vector3()));
+      const v = c.clone().project(camera), sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
+      const rPx = (PLANETS[hovered].r * g.scale.x / dist) * (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const w = tip.offsetWidth, h = tip.offsetHeight;
+      const x = sx - rPx - w - 28 > 16 ? sx - rPx - w - 28 : Math.min(innerWidth - w - 16, sx + rPx + 28);
+      const y = Math.min(innerHeight - h - 16, Math.max(80, sy - h / 2));
+      tip.style.transform = `translate(${x}px, ${y}px)`;
     }
   });
   canvas.addEventListener("click", () => { if (hovered !== null) land(hovered); });
