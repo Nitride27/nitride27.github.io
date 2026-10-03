@@ -485,3 +485,6 @@ body.booted .welcome-cta { transition-delay: 1.15s; }
 @media (prefers-reduced-motion: reduce) {
   .boot, .boot-log li { transition: none; animation: none; }
 }
+
+.readout { color: var(--muted); text-shadow: 0 1px 3px #000, 0 0 12px #000; }
+.readout b { color: var(--ink); }

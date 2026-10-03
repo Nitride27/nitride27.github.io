@@ -431,6 +431,7 @@
       }).join("\n");
       ascii.classList.toggle("playing", !!game);
       ui.hidden = !game;
+      ascii.nextElementSibling.classList.toggle("on", !!game && !game.over);
       play.hidden = !canStart();
       play.textContent = game?.over === "crash" ? "↻ Try again" : "▶ Fly the lander";
     };
@@ -487,7 +488,9 @@
       launch();
       wake();
       held = false;
-      const y = ascii.getBoundingClientRect().top + scrollY - innerHeight / 2 + ascii.offsetHeight / 2;
+      ascii.nextElementSibling.classList.add("on"); // show the phone pad first so the page is its final height
+      window.lenis?.resize();
+      const y = ascii.getBoundingClientRect().top + scrollY - Math.max(16, (innerHeight - ascii.offsetHeight - 110) / 2);
       window.lenis ? window.lenis.scrollTo(y, { duration: 0.8 }) : scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
     };
     // on-screen controls: exit, and ◀ ▲ ▶ for phones
@@ -497,6 +500,8 @@
     ui.innerHTML = '<button type="button" class="play-exit lander-exit"><span aria-hidden="true">✕</span> Exit</button>' +
       '<div class="lander-pad"><button type="button" data-k="left" aria-label="Steer left">◀</button><button type="button" data-k="up" aria-label="Thrust">▲</button><button type="button" data-k="right" aria-label="Steer right">▶</button></div>';
     ascii.before(ui);
+    // phones: the pad sits under the art (in the page flow) so it never covers the game
+    ascii.after($(".lander-pad", ui));
     $(".lander-exit", ui).addEventListener("click", () => { game = null; keys = {}; padX = cols / 2; padHalf = 9; terrain(); ui.hidden = true; draw(performance.now()); });
     $$(".lander-pad button", ui).forEach(b => {
       const k = b.dataset.k, on = e => { e.preventDefault(); keys[k] = true; }, off = () => (keys[k] = false);
@@ -545,7 +550,7 @@
       ["Éclat", "https://github.com/Nitride27/beautyinstitute-website"], ["aquahundred", "https://aquahundred.com.np"], ["Aqua Hundred", "https://aquahundred.com.np"],
       ["StayT", "https://apps.samridhashrestha.com.np/stayt/"], ["GTA VI", "https://apps.samridhashrestha.com.np/gta6guide/"],
       ["Anime Studio", "https://apps.samridhashrestha.com.np/animestudio/"], ["Contact management", "https://github.com/Nitride27/Contact_management_system"],
-      ["This portfolio", "index.html"], ["Every project", "https://github.com/Nitride27"],
+      ["This portfolio", "index.html"], ["Every project", "https://github.com/Nitride27"], ["JARVIS", "https://github.com/Nitride27/Jarvis"],
     ];
     const title = $(".used-title", usedPanel), list = $(".used-list", usedPanel), cat = $(".used-cat", usedPanel);
     const count = $(".used-count", usedPanel), meter = $$(".used-meter i", usedPanel), chips = $(".used-related .chips", usedPanel);
@@ -606,7 +611,7 @@
   const touch = matchMedia("(hover: none)").matches;
   const seen = (el, on, off) => new IntersectionObserver(([en]) => (en.isIntersecting ? on() : off && off()), { threshold: 0.35 }).observe(el);
   // phones have no hover, so site captures scroll on their own while on screen
-  if (touch) $$(".proj-thumb.scroll").forEach(t => seen(t, () => t.classList.add("auto"), () => t.classList.remove("auto")));
+  if (touch) $$(".proj-thumb.scroll, .scroller").forEach(t => seen(t, () => t.classList.add("auto"), () => t.classList.remove("auto")));
   $$(".proj-thumb.chart").forEach(c => seen(c, () => c.classList.add("on")));
   // the C++ session types itself out
   $$("[data-transcript]").forEach(pre => {
@@ -837,6 +842,8 @@
       fill.style.width = (cur / (stops.length - 1)) * 100 + "%";
       card.when.textContent = b.dataset.when; card.title.textContent = b.dataset.title; card.text.textContent = b.dataset.text;
       card.box.classList.remove("swap"); void card.box.offsetWidth; card.box.classList.add("swap");
+      const track = b.parentElement;
+      if (track.scrollWidth > track.clientWidth) track.scrollTo({ left: b.offsetLeft - track.clientWidth / 2 + b.offsetWidth / 2, behavior: reduce ? "auto" : "smooth" });
     };
     stops.forEach((b, i) => b.addEventListener("click", () => pick(i)));
     flight.addEventListener("keydown", e => {
@@ -1043,7 +1050,7 @@
   });
 
   // stacking cards: each card settles back as the next one slides over it
-  const cards = $$(".stack-card");
+  const cards = matchMedia("(max-width: 760px)").matches ? [] : $$(".stack-card"); // phones: plain scrolling cards
   cards.forEach((card, i) => {
     const next = cards[i + 1];
     if (!next) return;

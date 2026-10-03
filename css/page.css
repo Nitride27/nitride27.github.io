@@ -2916,13 +2916,11 @@ figure:hover > .lens { opacity: 1; transform: none; }
 .lander-exit { position: absolute; top: 3.4rem; right: 1.25rem; z-index: 5; }
 
 .lander-pad {
-  position: fixed;
-  left: 50%;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  z-index: 520;
   display: none;
-  gap: .7rem;
-  transform: translateX(-50%);
+  justify-content: center;
+  align-items: center;
+  gap: .9rem;
+  padding: 1rem 0 max(1.2rem, env(safe-area-inset-bottom));
 }
 
 .lander-pad button {
@@ -2944,7 +2942,7 @@ figure:hover > .lens { opacity: 1; transform: none; }
 .lander-pad button[data-k="up"] { width: 84px; height: 84px; }
 
 @media (hover: none), (pointer: coarse) {
-  .lander-pad { display: flex; align-items: center; }
+  .lander-pad.on { display: flex; }
 }
 .channels-panel .rows li, .channels-panel .rows li > a { align-items: center; }
 
@@ -3107,7 +3105,7 @@ body.menu-open .planet-menu a { transform: none; opacity: 1; }
 
   h2.title { font-size: clamp(1.35rem, 6.4vw, 2rem); overflow-wrap: anywhere; }
   .display { overflow-wrap: anywhere; }
-  .hud { display: none; }
+  .hud { font-size: .58rem; left: .9rem; bottom: .9rem; line-height: 1.6; }
   .orbit-badge { width: 72px; height: 72px; right: .8rem; bottom: .8rem; }
   .orbit-badge span { width: 32px; height: 32px; }
 
@@ -3208,3 +3206,52 @@ body.menu-open .planet-menu a { transform: none; opacity: 1; }
   background: radial-gradient(ellipse 50% 40% at 50% 0, color-mix(in srgb, var(--planet) 40%, transparent), transparent);
   filter: blur(10px);
 }
+
+/* =========================
+   PHONES: overflow + tap targets
+   ========================= */
+.contact-grid > * { min-width: 0; } /* grid items default to min-width:auto, which let one long row widen the page */
+
+@media (max-width: 560px) {
+  .channels-panel .rows li > a { flex-wrap: wrap; row-gap: .15rem; }
+  .channels-panel .rows li > a span:last-child { flex-basis: 100%; padding-left: calc(34px + .75rem); text-align: left; font-size: .85rem; overflow-wrap: anywhere; }
+  .channels-panel .rows li { gap: .6rem; }
+}
+
+@media (pointer: coarse) {
+  .footer .meta a, .term-open { display: inline-flex; align-items: center; min-height: 40px; }
+  .copy-btn { min-height: 38px; min-width: 56px; }
+  .text-link.arrow, .mobile-copy .text-link { display: inline-flex; align-items: center; min-height: 40px; }
+  .fragment { width: 40px; height: 40px; }
+  .fragment::before { inset: 12px; }
+  .topbar .home-link { min-height: 40px; display: flex; align-items: center; }
+  .proj-code { padding: .55rem .9rem; }
+}
+.cta { position: relative; overflow-x: clip; }
+html { overflow-x: clip; } /* belt and braces: nothing should ever widen the phone viewport */
+
+/* bottom-left readouts: readable over bright planets */
+.hud { color: var(--muted); text-shadow: 0 1px 3px #000, 0 0 12px #000; }
+.hud b { color: var(--ink); }
+
+/* =========================
+   PHONES: round two
+   ========================= */
+@media (max-width: 760px) {
+  .orbit-badge { display: none; } /* the name link in the bar already returns to orbit, and the badge covered content */
+  .stack-card { position: relative; top: 0; } /* cards taller than the screen must scroll, not stick */
+
+  /* flight log: a swipeable track with finger-sized stops */
+  .flight-track { overflow-x: auto; scrollbar-width: none; gap: 1.6rem; justify-content: flex-start; padding: 1rem .5rem; margin: 0 -1.25rem 2rem; scroll-snap-type: x proximity; }
+  .flight-track::-webkit-scrollbar { display: none; }
+  .flight-track button { flex: none; width: 48px; height: 48px; font-size: .62rem; scroll-snap-align: center; }
+  .flight-track::before, .flight-fill { display: none; }
+}
+
+/* touch screens: no hover, so drop hover-only captions and the lens; site previews scroll on their own */
+@media (hover: none) {
+  .showcase-media figcaption, .proj-thumb.bh small, .lens { display: none; }
+  .scroller.auto { animation: bg-scroll 9s ease-in-out infinite alternate; }
+}
+@keyframes bg-scroll { from { background-position: 50% 0; } to { background-position: 50% 100%; } }
+@media (pointer: coarse) { .rows li > a { min-height: 40px; align-items: center; } }

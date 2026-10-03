@@ -17,7 +17,7 @@
   const PEEK = {
     introduction: { stat: ["96.97%", "best model accuracy"], img: "images/Samridha.webp", items: ["Who I am, in one screen", "What I build: ML, RAG, apps", "My Android apps on Google Play"] },
     experience: { stat: ["Since Jun 2026", "software engineer at Octacore"], img: "images/octacore.webp", items: ["Octacore Solutions, full-time", "E-commerce APIs + RAG chatbot", "Aqua Hundred, freelance"] },
-    projects: { stat: ["14", "projects, 7 live"], img: "images/LandFill.webp", items: ["Landfill + flood mapping with U-Net / CNN", "Live sites that scroll on hover", "Apps, games and sims"] },
+    projects: { stat: ["15", "projects, 7 live"], img: "images/LandFill.webp", items: ["Landfill + flood mapping with U-Net / CNN", "Live sites that scroll on hover", "Apps, games and sims"] },
     skills: { stat: ["35", "tools across 6 families"], img: "", items: ["An orbit of skills to explore", "Every skill linked to real projects", "PyTorch, RAG, Django, Next.js"] },
     about: { stat: ["B.E.", "Computer Engineering, 2026"], img: "images/acem.webp", items: ["ACEM and St. Xavier's", "Certificates", "Life off the ship"] },
     contact: { stat: ["UTC+5:45", "Kathmandu"], img: "", items: ["Send a transmission", "Email, phone, GitHub, LinkedIn", "Copy any address in one click"] },
@@ -306,7 +306,8 @@
   const hud = { num: $(".hud-num"), name: $(".hud-name"), blurb: $(".hud-blurb"), land: $(".land-btn"), panel: $(".planet-panel"), dist: $(".hud-dist") };
   const dots = [...document.querySelectorAll(".dots button")];
   dots.forEach((d, i) => d.addEventListener("click", () => goTo(i)));
-  document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); goTo(+a.dataset.goto); }));
+  // a nav link for the planet you're already docked at lands on it instead of flying nowhere
+  document.querySelectorAll("[data-goto]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const i = +a.dataset.goto; i === current ? land(i) : goTo(i); }));
   const setCurrent = i => {
     if (i === current) return;
     current = i;

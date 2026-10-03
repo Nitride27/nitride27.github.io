@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:three": "node build-three.mjs",
+    "bake": "cd .. && node tools/bake-textures.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "three": "0.158.0"
+  }
+}
