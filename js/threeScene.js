@@ -243,6 +243,17 @@
   });
   const pickables = planets.map(g => g.userData.mesh);
   const paintReady = Promise.all(planets.map(g => g.userData.ready));
+  // feed the boot screen real progress: one line per planet as its textures arrive
+  let loaded = 0;
+  window.bootProgress?.(0.15, "Navigation computer");
+  planets.forEach((g, i) => g.userData.ready.then(() => {
+    loaded++;
+    window.bootProgress?.(0.15 + 0.85 * loaded / N, `${PLANETS[i].name} · ${PLANETS[i].type} world`);
+  }));
+  paintReady.then(() => window.bootDone?.());
+  // warp in once the boot screen clears: streaks rush past and the ship flies in from behind the camera
+  let intro = 0;
+  addEventListener("boot-done", () => (intro = reduce ? 0 : 1), { once: true });
 
   // asteroid field scattered along the route, kept clear of the flight line
   const rocks = Space.makeAsteroids(Space.small ? 40 : 70, i => {
@@ -397,7 +408,9 @@
     const prev = travel;
     if (!landing) travel += (target - travel) * (reduce ? 1 : 1 - Math.pow(0.0015, dt));
     velocity += ((travel - prev) / Math.max(dt, 1e-3) - velocity) * 0.15;
-    const speed = Math.min(Math.abs(velocity), 2.5);
+    intro = Math.max(0, intro - dt / 1.8);
+    const warp = intro * intro;
+    const speed = Math.max(Math.min(Math.abs(velocity), 2.5), warp * 2.5);
     if (!landing) rig.position.set(0, 0, -travel * SPACING);
     setCurrent(Math.round(travel));
     if (hud.dist) hud.dist.textContent = Math.round(Math.abs(travel - Math.round(travel)) * SPACING * 1000).toLocaleString();
@@ -421,7 +434,7 @@
     mouseSmooth.lerp(mouse, 0.05);
     const idle = reduce ? 0 : 1;
     if (!landing) {
-      ship.position.set(L.shipX + mouseSmooth.x * 0.5, L.shipY + Math.sin(t * 1.3) * 0.08 * idle + mouseSmooth.y * 0.25, -1);
+      ship.position.set(L.shipX + mouseSmooth.x * 0.5, L.shipY + Math.sin(t * 1.3) * 0.08 * idle + mouseSmooth.y * 0.25 - warp * 1.2, -1 + warp * 11);
       ship.rotation.set(-0.08 + mouseSmooth.y * 0.12, -mouseSmooth.x * 0.18, Math.sin(t * 0.9) * 0.04 * idle - mouseSmooth.x * 0.25 - velocity * 0.05 + roll.z);
     }
     camera.position.set(mouseSmooth.x * 0.6, 1.4 + mouseSmooth.y * 0.3 + Math.sin(t * 40) * speed * 0.015, 7);

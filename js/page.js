@@ -137,6 +137,49 @@
     src.start();
   };
 
+  // ---------- home: pre-flight boot screen, driven by the 3D scene's real loading progress ----------
+  const boot = $(".boot");
+  if (boot) {
+    const ring = $(".bar", boot), pct = $(".boot-pct", boot), log = $(".boot-log", boot);
+    const repeat = store(() => sessionStorage.getItem("booted")) === "1";
+    const t0 = performance.now(), MIN = reduce ? 0 : repeat ? 500 : 1500; // long enough to read the first time
+    let shown = 0, target = 0, finished = false;
+    const C = 2 * Math.PI * 54;
+    ring.style.strokeDasharray = C;
+    const paint = () => {
+      shown += (target - shown) * 0.12;
+      if (target - shown < 0.002) shown = target;
+      ring.style.strokeDashoffset = C * (1 - shown);
+      pct.textContent = Math.round(shown * 100);
+      if (shown < 1 || !finished) requestAnimationFrame(paint);
+    };
+    const line = (txt, ok = true) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span></span><em>${ok ? "OK" : "··"}</em>`;
+      li.firstChild.textContent = txt;
+      log.appendChild(li);
+      while (log.children.length > 6) log.firstChild.remove();
+    };
+    line("Hull integrity");
+    line("Ion drive · warm");
+    window.bootProgress = (p, label) => { target = Math.max(target, Math.min(1, p)); if (label) line(label); };
+    window.bootDone = () => {
+      if (finished) return;
+      finished = true;
+      target = 1;
+      line("All systems go");
+      setTimeout(() => {
+        store(() => sessionStorage.setItem("booted", "1"));
+        document.body.classList.add("booted");
+        dispatchEvent(new Event("boot-done"));
+        setTimeout(() => boot.remove(), 1200);
+      }, Math.max(250, MIN - (performance.now() - t0)));
+    };
+    requestAnimationFrame(paint);
+    setTimeout(() => window.bootDone(), 8000); // never trap anyone behind the loader (no WebGL, slow CDN)
+    $(".begin")?.addEventListener("click", () => $(".land-btn")?.click()); // first stop: Introduction
+  }
+
   // ---------- arrival + departure ----------
   const countAlt = (from, to, ms, done) => {
     const start = performance.now();
@@ -153,7 +196,12 @@
     vTop.textContent = "Entering atmosphere";
     vName.textContent = PLANETS[here];
     veil.dataset.mode = "land";
-    countAlt(12000, 0, 1500, () => { vTop.textContent = "Touchdown"; setTimeout(ready, 380); });
+    // the first landing of a visit plays in full; later hops between planets are quicker
+    const quick = store(() => sessionStorage.getItem("landed")) === "1";
+    store(() => sessionStorage.setItem("landed", "1"));
+    const dur = quick ? 950 : 1500;
+    veil.style.setProperty("--vd", dur + 100 + "ms");
+    countAlt(12000, 0, dur, () => { vTop.textContent = "Touchdown"; setTimeout(ready, quick ? 220 : 380); });
   } else requestAnimationFrame(ready);
   addEventListener("pageshow", e => { if (e.persisted) document.body.classList.remove("is-leaving"); });
 
@@ -286,13 +334,14 @@
   const ascii = $(".ascii");
   let startLander = () => {};
   if (ascii) {
-    const ROWS = 15, SURF = 11, W = 7; // W = lander width in columns
+    const ROWS = 20, SURF = 16, W = 7, TOP = 2; // W = lander width in columns; TOP = launch row, below the HUD
     const LANDER = ["  ╭─╮  ", " ╭┤o├╮ ", " ╰┬─┬╯ ", " ╱   ╲ "];
     const RINGED = ["   ▄██▄   ", "══▐████▌══", "   ▀██▀   "];
     const EIGHTHS = " ▁▂▃▄▅▆▇█";
-    const G = 0.006, THRUST = 0.015, SIDE = 0.008, SAFE_V = 0.14, SAFE_H = 0.1; // per 50ms step
+    // tuned with a simulated sloppy player (600ms reactions, misjudged speed): ~100% at level 1, ~40% by level 5
+    const G = 0.0028, THRUST = 0.0075, SIDE = 0.005, SAFE_V = 0.12, SAFE_H = 0.15; // rows or cols per 50ms step
     let cols = 0, heights = [], near = [], far = [], stars = [], comet = null, dust = [];
-    let padX = 0, padHalf = 7, level = 1, score = 0;
+    let padX = 0, padHalf = 9, level = 1, score = 0;
     const best = () => +(store(() => localStorage.getItem("lander-best")) || 0);
     // near terrain as float rows (smaller = higher) with a level pad at padX; far range sits behind it
     const terrain = () => {
@@ -329,7 +378,7 @@
         if (tw > -0.3) put(y, x, tw > 0.92 ? "+" : p > 0.85 ? "•" : "·", tw > 0.92 ? "b" : "s");
       });
       const px = Math.round(cols * 0.78);
-      RINGED.forEach((row, r) => [...row].forEach((ch, k) => put(1 + r, px + k, ch, ch === "═" || ch === "▐" || ch === "▌" ? "r" : "q")));
+      RINGED.forEach((row, r) => [...row].forEach((ch, k) => put(3 + r, px + k, ch, ch === "═" || ch === "▐" || ch === "▌" ? "r" : "q")));
       if (!comet && Math.random() < 0.01) comet = { x: Math.random() * cols * 0.6, y: Math.random() * 3 | 0, v: 1.6 };
       if (comet) { comet.x += comet.v; text(comet.y, "──·", Math.round(comet.x), "c"); if (comet.x > cols) comet = null; }
       // terrain: eighth blocks give the ridgeline sub-row detail
@@ -345,6 +394,15 @@
       if (!(game && game.over === "crash")) {
         LANDER.forEach((line, r) => [...line].forEach((ch, k) => put(ly + r, lx + k, ch, "l")));
         if (game && game.firing && !game.over) { text(ly + 4, "▼", lx + 3, "fl"); if (Math.random() > 0.4) text(ly + 5, "░", lx + 3, "fl"); }
+        if (game && !game.over) {
+          // live speed beside the lander: green while a touchdown would be safe, red when it would not
+          const fast = game.vy >= SAFE_V, slide = Math.abs(game.vx) >= SAFE_H;
+          text(ly + 1, `${fast ? "▼" : "↓"}${(game.vy * 20).toFixed(1)}`, lx + W + 1, fast ? "w" : "ok");
+          if (slide) text(ly + 2, game.vx < 0 ? "◀ drift" : "drift ▶", lx + W + 1, "w");
+          const p = Math.round(padX), gap = Math.abs(lx + 3.5 - padX);
+          if (gap > padHalf) text(SURF - 2, "▼", p, "ok"), text(SURF - 3, "LAND", p - 1, "ok");
+          if (fast && SURF - (game.y + LANDER.length) < 4 && Math.sin(t * 0.03) > 0) centre(5, "TOO FAST, BURN!", "w");
+        }
         if (game && !game.over && keys.left) put(ly + 1, lx + W, "≈", "fl");
         if (game && !game.over && keys.right) put(ly + 1, lx - 1, "≈", "fl");
       } else text(Math.min(ly + 3, SURF - 1), "▒ ╱▓╲ ░", lx, "w"); // wreckage
@@ -354,11 +412,11 @@
         if (Math.sin(t * 0.004) > 0) put(SURF - LANDER.length - 1, lx + 3, "*", "fl"); // beacon
         if (best()) centre(0, `best score ${best()}`);
       } else {
-        const wind = game.wind ? `${game.wind < 0 ? "←" : "→"}${Math.abs(game.wind * 1000).toFixed(1)}` : "calm";
+        const wind = Math.abs(game.wind) > 1e-4 ? `${game.wind < 0 ? "←" : "→"}${Math.abs(game.wind * 1000).toFixed(1)}` : "calm";
         const fuel = String(Math.max(0, game.fuel | 0)).padStart(3);
         text(0, cols >= 96
-          ? `LVL ${level}  SCORE ${score}  BEST ${best()}   FUEL ${fuel}  V ${(game.vy * 20).toFixed(1)}  H ${(game.vx * 20).toFixed(1)}  WIND ${wind}   ↑/space thrust  ←→ steer`
-          : `L${level} S${score} F${fuel} V${(game.vy * 20).toFixed(1)} W${wind}`);
+          ? `LVL ${level}  SCORE ${score}  BEST ${best()}   FUEL ${fuel}  WIND ${wind}   land under ${(SAFE_V * 20).toFixed(1)} · ↑/space thrust  ←→ steer`
+          : `L${level} S${score} F${fuel} W${wind} safe<${(SAFE_V * 20).toFixed(1)}`);
         // fuel gauge
         const gw = Math.min(20, cols - 4), on = Math.round(gw * Math.max(0, game.fuel) / game.tank);
         text(1, "▕" + "█".repeat(on) + "░".repeat(gw - on) + "▏", 1, game.fuel < game.tank * 0.2 ? "w" : "t");
@@ -386,11 +444,11 @@
       g.vx += g.wind;
       g.fuel -= (g.firing ? 1 : 0) + (keys.left || keys.right ? 0.4 : 0);
       g.x = Math.max(0, Math.min(cols - W, g.x + g.vx));
-      g.y = Math.max(0, g.y + g.vy);
+      g.y = Math.max(TOP, g.y + g.vy);
       const lx = Math.round(g.x), ground = Math.min(...heights.slice(lx, lx + W));
       if (g.y + LANDER.length < ground) return;
       g.y = ground - LANDER.length;
-      const onPad = lx >= Math.round(padX - padHalf) && lx + W <= Math.round(padX + padHalf);
+      const onPad = Math.abs(g.x + W / 2 - padX) <= padHalf; // lander's centre over the pad
       const soft = g.vy < SAFE_V && Math.abs(g.vx) < SAFE_H;
       for (let i = 0; i < 6; i++) dust.push({ x: lx + 3, vx: (i - 2.5) * 0.5, life: 10 });
       if (onPad && soft) {
@@ -408,22 +466,23 @@
       }
     };
     const launch = () => {
-      const tank = Math.max(70, 130 - level * 8);
+      const tank = Math.max(110, 190 - level * 12);
       game = {
         // start within reach of the pad; the drift you must correct grows each level
-        x: Math.max(1, Math.min(cols - W - 1, padX - 3 + (Math.random() < 0.5 ? -1 : 1) * Math.min(cols * 0.35, 8 + level * 7))), y: 0, vx: (Math.random() - 0.5) * 0.15, vy: 0, fuel: tank, tank, over: null,
-        g: G * (1 + (level - 1) * 0.08), wind: level > 1 ? (Math.random() - 0.5) * 0.0012 * Math.min(level, 6) : 0,
+        x: Math.max(1, Math.min(cols - W - 1, padX - W / 2 + (Math.random() < 0.5 ? -1 : 1) * Math.random() * Math.min(cols * 0.33, (level - 1) * 8))),
+        y: TOP, vx: 0, vy: 0, fuel: tank, tank, over: null,
+        g: G * (1 + (level - 1) * 0.06), wind: level > 1 ? (Math.random() - 0.5) * 0.0006 * Math.min(level, 6) : 0,
       };
     };
     const nextLevel = () => {
       level++;
-      padHalf = Math.max(4, 9 - level);
+      padHalf = Math.max(5, 10 - level);
       padX = padHalf + 3 + Math.random() * (cols - 2 * padHalf - 6);
       terrain();
       launch();
     };
     startLander = () => {
-      level = 1; score = 0; padHalf = 7; padX = cols / 2;
+      level = 1; score = 0; padHalf = 9; padX = cols / 2;
       terrain();
       launch();
       wake();
@@ -438,7 +497,7 @@
     ui.innerHTML = '<button type="button" class="play-exit lander-exit"><span aria-hidden="true">✕</span> Exit</button>' +
       '<div class="lander-pad"><button type="button" data-k="left" aria-label="Steer left">◀</button><button type="button" data-k="up" aria-label="Thrust">▲</button><button type="button" data-k="right" aria-label="Steer right">▶</button></div>';
     ascii.before(ui);
-    $(".lander-exit", ui).addEventListener("click", () => { game = null; keys = {}; padX = cols / 2; padHalf = 7; terrain(); ui.hidden = true; draw(performance.now()); });
+    $(".lander-exit", ui).addEventListener("click", () => { game = null; keys = {}; padX = cols / 2; padHalf = 9; terrain(); ui.hidden = true; draw(performance.now()); });
     $$(".lander-pad button", ui).forEach(b => {
       const k = b.dataset.k, on = e => { e.preventDefault(); keys[k] = true; }, off = () => (keys[k] = false);
       b.addEventListener("pointerdown", on);
@@ -458,7 +517,7 @@
     });
     addEventListener("pointerup", () => (held = false));
     const KEYS = { ArrowUp: "up", " ": "up", w: "up", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
-    addEventListener("keydown", e => { if (game && !game.over && KEYS[e.key] && !e.target.closest("input,textarea")) { keys[KEYS[e.key]] = true; e.preventDefault(); } });
+    addEventListener("keydown", e => { if (game && !game.over && KEYS[e.key] && !e.target.closest?.("input,textarea")) { keys[KEYS[e.key]] = true; e.preventDefault(); } });
     addEventListener("keyup", e => { if (KEYS[e.key]) keys[KEYS[e.key]] = false; });
     ascii.setAttribute("title", "Click to fly the lander");
     measure();
@@ -950,8 +1009,14 @@
     el.setAttribute("aria-label", el.textContent.replace(/\s+/g, " ").trim());
     splitWords(el);
     $$(".split-line", el).forEach(s => s.setAttribute("aria-hidden", "true"));
-    gsap.from($$(".split-char", el), {
-      yPercent: 110, duration: 1.2, ease: "expo.out", stagger: 0.06, delay: isIndex ? 0.2 : 0.95,
+    const chars = $$(".split-char", el);
+    if (boot) { // home: hold the headline until the boot screen clears
+      gsap.set(chars, { yPercent: 110 });
+      addEventListener("boot-done", () => gsap.to(chars, { yPercent: 0, duration: 1.2, ease: "expo.out", stagger: 0.06, delay: 0.35 }), { once: true });
+      return;
+    }
+    gsap.from(chars, {
+      yPercent: 110, duration: 1.2, ease: "expo.out", stagger: 0.06, delay: 0.95,
       scrollTrigger: { trigger: el, start: "top 92%" },
     });
   });

@@ -61,15 +61,18 @@ window.Space = (() => {
   // A planet group: shows its base colour at once, then swaps in the baked maps as they arrive.
   // hi = use the 2048px maps (the close-up horizon on subpages)
   const makePlanet = (type, r, sunDir, { hi = false, segments = 64 } = {}) => {
-    const cfg = TYPES[type], group = new THREE.Group(), sfx = hi && !small ? "@2x" : "";
+    // hi = close-up horizon (2048 on desktop, 1024 on phones). The home page's small planets keep a 1024 colour map on
+    // desktop but take 512 clouds, glow and bump maps, which are the heavy files and barely show at that size.
+    const cfg = TYPES[type], group = new THREE.Group(), sfx = hi ? (small ? "" : "@2x") : "-512", aux = hi ? "" : "-512";
+    const mapSfx = hi ? sfx : small ? "-512" : "";
     const mat = new THREE.MeshStandardMaterial({ color: cfg.base, roughness: 0.9, metalness: 0, envMapIntensity: 0.12 });
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, segments, Math.round(segments * 0.75)), mat);
     group.add(mesh);
     const tasks = [];
 
-    tasks.push(tex(type + (type === "moon" ? "" : sfx)).then(t => { if (t) { mat.map = t; mat.color.set(0xffffff); mat.needsUpdate = true; } }));
-    if (cfg.water) tasks.push(tex(`${type}-aux`, { srgb: false }).then(t => { if (t) { mat.roughnessMap = t; mat.roughness = 1; mat.needsUpdate = true; } }));
-    else if (cfg.bump) tasks.push(tex(`${type}-aux`, { srgb: false }).then(t => { if (t) { mat.bumpMap = t; mat.bumpScale = cfg.bump; mat.needsUpdate = true; } }));
+    tasks.push(tex(type + (type === "moon" ? "" : mapSfx)).then(t => { if (t) { mat.map = t; mat.color.set(0xffffff); mat.needsUpdate = true; } }));
+    if (cfg.water) tasks.push(tex(`${type}-aux${aux}`, { srgb: false }).then(t => { if (t) { mat.roughnessMap = t; mat.roughness = 1; mat.needsUpdate = true; } }));
+    else if (cfg.bump) tasks.push(tex(`${type}-aux${aux}`, { srgb: false }).then(t => { if (t) { mat.bumpMap = t; mat.bumpScale = cfg.bump; mat.needsUpdate = true; } }));
     if (cfg.glowMap) tasks.push(tex("lava-glow" + sfx).then(t => {
       if (t) { mat.emissiveMap = t; mat.emissive.set(0xffffff); mat.emissiveIntensity = 0.7; mat.needsUpdate = true; }
     }));

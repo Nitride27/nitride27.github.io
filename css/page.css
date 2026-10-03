@@ -1884,10 +1884,10 @@ body.scrolled .sound-prompt.show {
   z-index: 1;
 }
 
-.transition-veil[data-mode="land"] .vs-planet { animation: vs-rise 1.6s cubic-bezier(.2, .7, .3, 1) both; }
-.transition-veil[data-mode="land"] .vs-ship { animation: vs-land 1.6s cubic-bezier(.25, .8, .35, 1) both; }
-.transition-veil[data-mode="land"] .vs-flame { animation: vs-burn-out 1.6s linear both, vs-flicker .08s steps(2) infinite; }
-.transition-veil[data-mode="land"] .vs-dust { animation: vs-puff .9s 1.25s ease-out both; }
+.transition-veil[data-mode="land"] .vs-planet { animation: vs-rise var(--vd, 1.6s) cubic-bezier(.2, .7, .3, 1) both; }
+.transition-veil[data-mode="land"] .vs-ship { animation: vs-land var(--vd, 1.6s) cubic-bezier(.25, .8, .35, 1) both; }
+.transition-veil[data-mode="land"] .vs-flame { animation: vs-burn-out var(--vd, 1.6s) linear both, vs-flicker .08s steps(2) infinite; }
+.transition-veil[data-mode="land"] .vs-dust { animation: vs-puff .9s calc(var(--vd, 1.6s) * .78) ease-out both; }
 
 .transition-veil[data-mode="approach"] .vs-planet { animation: vs-approach-planet .9s cubic-bezier(.3, .6, .4, 1) both; }
 .transition-veil[data-mode="approach"] .vs-ship { animation: vs-approach-ship .9s cubic-bezier(.3, .6, .4, 1) both; }
@@ -3160,3 +3160,51 @@ body.menu-open .planet-menu a { transform: none; opacity: 1; }
 .lander-play:hover { background: var(--planet); color: #000; transform: translateY(-2px); }
 .lander-play[hidden] { display: none; }
 .ascii { touch-action: manipulation; }
+.ascii .a-ok { color: #7dffb0; }
+
+/* veil extras: stars rushing past, re-entry plasma, haze on the horizon */
+.veil-scene::before {
+  content: '';
+  position: absolute;
+  inset: -100% 0 0;
+  background:
+    radial-gradient(1px 6px at 20% 30%, rgba(255, 255, 255, .7), transparent), radial-gradient(1px 9px at 70% 10%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 5px at 45% 70%, rgba(200, 220, 255, .6), transparent), radial-gradient(1px 8px at 85% 55%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 7px at 8% 85%, rgba(255, 255, 255, .6), transparent);
+  background-size: 260px 310px, 190px 370px, 330px 230px, 230px 410px, 290px 270px; /* mismatched tiles so no grid shows */
+  opacity: 0;
+}
+
+.transition-veil[data-mode="land"] .veil-scene::before { animation: vs-rush var(--vd, 1.6s) cubic-bezier(.2, .7, .3, 1) both; }
+.transition-veil[data-mode="launch"] .veil-scene::before { animation: vs-rush-down .9s cubic-bezier(.6, 0, .8, .4) both; }
+@keyframes vs-rush { 0% { transform: translateY(0); opacity: .9; } 70% { opacity: .5; } 100% { transform: translateY(-50%); opacity: 0; } }
+@keyframes vs-rush-down { 0% { transform: translateY(-50%); opacity: 0; } 30% { opacity: .8; } 100% { transform: translateY(0); opacity: .9; } }
+
+/* plasma: a hot trail streaming up behind the falling lander, burning off before the flare */
+.vs-ship::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  width: 34px;
+  height: 140px;
+  margin-left: -17px;
+  border-radius: 50% 50% 40% 40%;
+  background: linear-gradient(to top, #fff 0, #ffd28a 12%, #ff7a2a 35%, rgba(255, 90, 30, .3) 65%, transparent);
+  filter: blur(4px);
+  opacity: 0;
+  transform-origin: 50% 100%;
+}
+
+.transition-veil[data-mode="land"] .vs-ship::before { animation: vs-plasma var(--vd, 1.6s) linear both; }
+@keyframes vs-plasma { 0% { opacity: .95; transform: scaleY(1.2); } 45% { opacity: .6; transform: scaleY(.7); } 60%, 100% { opacity: 0; transform: scaleY(.3); } }
+
+.vs-planet::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0 auto;
+  height: 30%;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background: radial-gradient(ellipse 50% 40% at 50% 0, color-mix(in srgb, var(--planet) 40%, transparent), transparent);
+  filter: blur(10px);
+}

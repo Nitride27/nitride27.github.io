@@ -41,6 +41,18 @@
 
 <body class="index-page">
   <div class="transition-veil"></div>
+  <noscript><style>.boot { display: none; }</style></noscript>
+  <div class="boot" role="status" aria-live="polite" aria-label="Loading the spaceship">
+    <div class="boot-core">
+      <div class="boot-ring" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="54"/><circle class="bar" cx="60" cy="60" r="54"/><circle class="tick" cx="60" cy="60" r="46"/></svg>
+        <b class="boot-pct">0</b>
+      </div>
+      <p class="boot-title"><span>SS-27</span> Pre-flight check</p>
+      <ol class="boot-log"></ol>
+    </div>
+    <p class="boot-foot">Samridha Shrestha · Software engineer · Kathmandu</p>
+  </div>
   <canvas id="space-canvas" aria-label="A spaceship flying past six planets, one for each page"></canvas>
 
   <nav class="topbar" aria-label="Fly to a planet">
@@ -63,10 +75,17 @@
       <div>
         <span class="label" style="margin:0">Your captain</span>
         <b>Samridha Shrestha</b>
-        <span>AI/ML engineer · Kathmandu</span>
+        <span>Software engineer · AI/ML · Kathmandu</span>
       </div>
     </div>
     <p class="lede">Scroll to fly between the six planets, and click one to land.</p>
+    <ul class="brief" aria-label="At a glance">
+      <li><b>14</b> projects</li><li><b>96.97%</b> best model</li><li><b>2</b> apps on Google Play</li>
+    </ul>
+    <div class="welcome-cta">
+      <button class="btn solid arrow begin" type="button">Begin flight</button>
+      <span class="scroll-cue" aria-hidden="true"><i></i>scroll</span>
+    </div>
   </section>
 
   <aside class="planet-panel" aria-live="polite">

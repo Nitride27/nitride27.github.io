@@ -186,13 +186,13 @@ if (!isMainThread) {
   // [name, paint job, outputs]; outputs: [file, mode, size] where mode is rgb | rgba | aux | rough
   const JOBS = [
     ...["ice", "terran", "lava", "gas", "desert", "ocean"].map(t => [t, { kind: t, w: 2048, h: 1024, ...P }, [
-      [`${t}@2x`, "rgb", 2048], [t, "rgb", 1024],
-      ...(t === "gas" ? [] : [[`${t}-aux`, t === "terran" || t === "ocean" ? "rough" : "aux", 1024]]),
+      [`${t}@2x`, "rgb", 2048], [t, "rgb", 1024], [`${t}-512`, "rgb", 512],
+      ...(t === "gas" ? [] : [[`${t}-aux`, t === "terran" || t === "ocean" ? "rough" : "aux", 1024], [`${t}-aux-512`, t === "terran" || t === "ocean" ? "rough" : "aux", 512]]),
     ]]),
     ["moon", { kind: "moon", w: 1024, h: 512 }, [["moon", "rgb", 512], ["moon-aux", "aux", 512]]],
-    ["lavaGlow", { kind: "lavaGlow", w: 2048, h: 1024, sat: 1.2 }, [["lava-glow@2x", "rgb", 2048], ["lava-glow", "rgb", 1024]]],
-    ["clouds1", { kind: "clouds", w: 2048, h: 1024, seed: 3 }, [["clouds-a@2x", "alpha", 2048], ["clouds-a", "alpha", 1024]]],
-    ["clouds2", { kind: "clouds", w: 2048, h: 1024, seed: 9 }, [["clouds-b@2x", "alpha", 2048], ["clouds-b", "alpha", 1024]]],
+    ["lavaGlow", { kind: "lavaGlow", w: 2048, h: 1024, sat: 1.2 }, [["lava-glow@2x", "rgb", 2048], ["lava-glow", "rgb", 1024], ["lava-glow-512", "rgb", 512]]],
+    ["clouds1", { kind: "clouds", w: 2048, h: 1024, seed: 3 }, [["clouds-a@2x", "alpha", 2048], ["clouds-a", "alpha", 1024], ["clouds-a-512", "alpha", 512]]],
+    ["clouds2", { kind: "clouds", w: 2048, h: 1024, seed: 9 }, [["clouds-b@2x", "alpha", 2048], ["clouds-b", "alpha", 1024], ["clouds-b-512", "alpha", 512]]],
     ["sky", { kind: "sky", w: 4096, h: 2048, sat: 1.5 }, [["sky", "rgb", 4096], ["sky-sm", "rgb", 2048]]],
     ["nebula", { kind: "nebula", w: 1024, h: 1024, sat: 1.4 }, [["nebula", "rgb", 1024]]],
   ];
