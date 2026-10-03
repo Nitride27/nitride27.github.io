@@ -492,7 +492,9 @@ body.booted .welcome-cta { transition-delay: 1.15s; }
 /* phones: a quieter welcome; the heading, captain, one line and the start button are enough */
 @media (max-width: 600px) {
   .welcome > .label, .welcome .captain .label, .brief { display: none; }
-  .welcome { top: 5.5rem; }
+  .welcome, .planet-panel { top: max(1.1rem, calc(env(safe-area-inset-top) + .6rem)); left: 1rem; right: 1rem; }
+  .welcome { padding: 0; } /* it is a <section>, which phones pad by 5.5rem */
+  .index-page .sound-prompt { top: auto; bottom: 6rem; }
   .captain { margin-top: 1.2rem; padding: .45rem 1rem .45rem .45rem; gap: .75rem; }
   .captain img { width: 40px; height: 40px; }
   .captain b { font-size: 1rem; margin: 0; }

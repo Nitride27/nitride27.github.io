@@ -101,7 +101,6 @@
     muted = m;
     store(() => localStorage.setItem("audio-muted", m ? "1" : "0"));
     m ? audio.pause() : tryPlay();
-    quiet();
     sync();
   };
   btn.addEventListener("click", e => { e.stopPropagation(); setMuted(!(muted || audio.paused)); });
@@ -119,17 +118,16 @@
   const saveTime = () => store(() => sessionStorage.setItem("audio-time", audio.currentTime));
   addEventListener("pagehide", saveTime);
 
-  // ---------- sound effects: synthesised on one shared context (no files), silent while the music is muted ----------
+  // ---------- sound effects: synthesised on one shared context (no files); independent of the music button ----------
   let actx = null, master = null, noiseBuf = null, eng = null;
   // the context is only created and resumed inside a click, tap or key press, so the browser never blocks it
   const wake = () => {
-    if (muted) return;
     if (!actx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       actx = new AC();
       master = actx.createGain();
-      master.gain.value = 0.6;
+      master.gain.value = 1;
       master.connect(actx.destination);
       noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
       const d = noiseBuf.getChannelData(0);
@@ -137,7 +135,7 @@
     }
     if (actx.state === "suspended" && !document.hidden) actx.resume().catch(() => {});
   };
-  const ac = () => (!muted && actx?.state === "running" ? actx : null); // before the first gesture: drop the sound rather than queue a burst
+  const ac = () => (actx?.state === "running" ? actx : null); // before the first gesture: drop the sound rather than queue a burst
   const env = (c, t, vol, attack, dur) => {
     const g = c.createGain();
     g.gain.setValueAtTime(0.0001, t);
@@ -166,14 +164,17 @@
     src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
-  const buzz = ms => haptic && !muted && navigator.userActivation?.hasBeenActive && navigator.vibrate(ms);
+  const buzz = ms => haptic && navigator.userActivation?.hasBeenActive && navigator.vibrate(ms);
   const SOUNDS = {
-    tick: () => tone(2200, 0.03, { type: "square", vol: 0.018 }),
-    press: () => tone(900, 0.09, { type: "triangle", vol: 0.07, to: 520 }),
-    blip: () => tone(1100 + Math.random() * 500, 0.045, { type: "square", vol: 0.02 }),
-    hover: () => tone(1500, 0.12, { vol: 0.035, to: 1900 }),
-    chime: () => { tone(660, 0.5, { vol: 0.06 }); tone(990, 0.7, { vol: 0.045, delay: 0.09 }); buzz(8); },
-    ok: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: "triangle", vol: 0.06, delay: i * 0.08 })); buzz([15, 40, 15]); },
+    tick: () => tone(2400, 0.035, { type: "square", vol: 0.04 }),
+    press: () => tone(900, 0.1, { type: "triangle", vol: 0.16, to: 520 }),
+    blip: () => tone(1100 + Math.random() * 500, 0.05, { type: "square", vol: 0.05 }),
+    hover: () => tone(1500, 0.14, { vol: 0.08, to: 1900 }),
+    queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
+    crowd: () => { hiss(2.6, { from: 500, to: 1100, vol: 0.3, q: 0.4, attack: 0.5 }); hiss(2.2, { from: 1500, to: 2600, vol: 0.12, q: 0.6, attack: 0.4, delay: 0.1 }); },
+    powerup: () => { tone(110, 1, { type: "sawtooth", vol: 0.07, to: 880, attack: 0.8 }); hiss(1, { from: 200, to: 5000, vol: 0.2, attack: 0.9 }); },
+    chime: () => { tone(660, 0.5, { vol: 0.12 }); tone(990, 0.7, { vol: 0.09, delay: 0.09 }); buzz(8); },
+    ok: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: "triangle", vol: 0.12, delay: i * 0.08 })); buzz([15, 40, 15]); },
     whoosh: () => hiss(0.9),
     descend: () => { hiss(1.1, { from: 2400, to: 160, vol: 0.22, attack: 0.15 }); tone(320, 1, { type: "sawtooth", vol: 0.025, to: 70 }); buzz(20); },
     warp: () => { hiss(1.9, { from: 120, to: 4200, vol: 0.3, attack: 1.1 }); tone(55, 1.9, { type: "sawtooth", vol: 0.04, to: 220, attack: 1 }); },
@@ -202,10 +203,21 @@
     eng.f.frequency.setTargetAtTime(160 + l * 900, t, 0.12);
     eng.o.frequency.setTargetAtTime(38 + l * 40, t, 0.12);
   };
-  window.sfx = { play: name => { if (!reduce || name !== "warp") SOUNDS[name]?.(); }, engine };
+  // a plucked string (Karplus-Strong): a burst of noise fed through a short, slowly damped delay line
+  const pluck = (freq, vol = 0.35) => {
+    const c = ac(); if (!c) return;
+    const len = Math.round(c.sampleRate * 1.6), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    const n = Math.round(c.sampleRate / freq), line = Float32Array.from({ length: n }, () => Math.random() * 2 - 1);
+    for (let i = 0, k = 0; i < len; i++, k = (k + 1) % n) { const next = line[(k + 1) % n]; d[i] = line[k]; line[k] = (line[k] + next) * 0.4985; }
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf; g.gain.value = vol;
+    src.connect(g).connect(master);
+    src.start();
+  };
+  window.sfx = { play: name => { if (!reduce || name !== "warp") SOUNDS[name]?.(); }, engine, pluck };
   const whoosh = () => !reduce && SOUNDS.whoosh();
-  // silence everything with the music button, and while the tab is hidden
-  const quiet = () => actx && (muted || document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
+  // silent while the tab is hidden
+  const quiet = () => actx && (document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
   document.addEventListener("visibilitychange", quiet);
   // UI feedback: a soft press on buttons and links, a tick when a pointer finds one
   addEventListener("pointerdown", e => e.target.closest?.("a, button, [role=button], .ascii") && SOUNDS.press(), true);
@@ -330,14 +342,29 @@
     if (typeof ScrollTrigger !== "undefined") ScrollTrigger.refresh();
   }));
 
-  // sticky project copy follows whichever image is centred
+  // showcase: on desktop the copy and one image frame stay pinned and scrolling swaps the project inside them;
+  // on phones the images run as a list and whichever is centred is the active one
   const figs = $$(".showcase-media figure");
   if (figs.length) {
-    const arts = $$(".showcase-copy article"), dashes = $$(".dashes i");
-    const io = new IntersectionObserver(entries => entries.forEach(en => {
-      if (!en.isIntersecting) return;
-      const i = figs.indexOf(en.target);
+    const arts = $$(".showcase-copy article"), dashes = $$(".dashes i"), count = $(".showcase-count b"), track = $(".showcase-media");
+    let active = -1;
+    const setActive = i => {
+      if (i === active) return;
+      if (active >= 0) window.sfx.play("blip");
+      active = i;
       [figs, arts, dashes].forEach(list => list.forEach((el, k) => el.classList.toggle("on", k === i)));
+      if (count) count.textContent = String(i + 1).padStart(2, "0");
+    };
+    const pinned = matchMedia("(min-width: 901px)");
+    const onScroll = () => {
+      if (!pinned.matches) return;
+      const r = track.getBoundingClientRect(), p = -r.top / Math.max(1, r.height - innerHeight);
+      setActive(Math.max(0, Math.min(figs.length - 1, Math.floor(p * figs.length))));
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    const io = new IntersectionObserver(entries => entries.forEach(en => {
+      if (en.isIntersecting && !pinned.matches) setActive(figs.indexOf(en.target));
     }), { rootMargin: "-45% 0px -45% 0px" });
     figs.forEach(f => io.observe(f));
   }
@@ -944,33 +971,223 @@
     pick(stops.length - 1);
   }
 
-  // ---------- about: off-duty cards do something ----------
-  $$("[data-duty]").forEach(card => card.addEventListener("click", () => {
-    const d = card.dataset.duty;
-    if (d === "music") { setMuted(!(muted || audio.paused)); toast(muted ? "Music off" : "Music on: Interstellar"); }
-    if (d === "game") startBlaster();
-    if (d === "anime") open("https://apps.samridhashrestha.com.np/animestudio/", "_blank", "noopener");
-    if (d === "sports") kick(card);
-  }));
-  // a ball that bounces around inside its card
-  const kick = card => {
-    const ball = $(".ball", card), W = card.clientWidth - 22, H = card.clientHeight - 22;
-    if (!ball._s) { ball._s = { x: W - 20, y: H - 20, vx: 0, vy: 0, run: false }; ball.style.cssText = "left:0;top:0;right:auto;bottom:auto"; }
-    const st = ball._s;
-    st.vx = (Math.random() - 0.5) * 18; st.vy = -10 - Math.random() * 8;
-    if (st.run) return;
-    st.run = true;
-    const tick = () => {
-      st.vy += 0.6; st.x += st.vx; st.y += st.vy;
-      if (st.x < 0 || st.x > W) { st.vx *= -0.8; st.x = Math.max(0, Math.min(W, st.x)); }
-      if (st.y < 0) { st.vy *= -0.8; st.y = 0; }
-      if (st.y > H) { st.y = H; st.vy *= -0.6; st.vx *= 0.9; }
-      ball.style.transform = `translate(${st.x}px, ${st.y}px) rotate(${st.x * 4}deg)`;
-      if (Math.abs(st.vy) < 0.8 && st.y >= H - 0.5 && Math.abs(st.vx) < 0.3) { st.run = false; return; }
+  // ---------- site preview: hover a site link and it opens live in a floating browser window ----------
+  // data-preview="" embeds the site; data-preview="<image>" shows a scrollable full-page capture (for sites that refuse to be framed)
+  const previews = $$("[data-preview]");
+  if (previews.length && matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    const pop = document.createElement("div");
+    pop.className = "site-pop";
+    pop.innerHTML = '<div class="browser-bar"><i></i><i></i><i></i><b></b><a target="_blank" rel="noopener">Open ↗</a></div>' +
+      '<div class="site-pop-body"><span class="site-pop-load">Establishing link</span></div>';
+    document.body.appendChild(pop);
+    const body = $(".site-pop-body", pop), host = $(".browser-bar b", pop), openA = $(".browser-bar a", pop);
+    let url = null, showT, hideT;
+    const size = () => {
+      const w = Math.min(680, innerWidth * 0.46), h = Math.min(innerHeight * 0.62, w * 0.66);
+      pop.style.setProperty("--w", w + "px"); pop.style.setProperty("--h", h + "px"); pop.style.setProperty("--s", w / 1280);
+      return [w, h + 36];
+    };
+    const show = (a, e) => {
+      clearTimeout(hideT);
+      if (url !== a.href) {
+        url = a.href;
+        host.textContent = new URL(url).host;
+        openA.href = url;
+        $("iframe, .site-pop-shot", body)?.remove();
+        pop.classList.remove("loaded");
+        if (a.dataset.preview) {
+          const d = document.createElement("div"); // a full-page capture you scroll yourself with the wheel
+          d.className = "site-pop-shot";
+          d.setAttribute("data-lenis-prevent", "");
+          d.innerHTML = `<img src="${a.dataset.preview}" alt="">`;
+          body.appendChild(d);
+          pop.classList.add("loaded");
+        } else {
+          const f = document.createElement("iframe");
+          f.title = "Live preview of " + host.textContent;
+          f.referrerPolicy = "no-referrer";
+          f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups");
+          f.addEventListener("load", () => pop.classList.add("loaded"));
+          f.src = url;
+          body.appendChild(f);
+        }
+      }
+      // beside the pointer, flipped to whichever side has room
+      const [w, h] = size(), x = e.clientX + 24 + w < innerWidth - 12 ? e.clientX + 24 : Math.max(12, e.clientX - 24 - w);
+      const y = Math.max(84, Math.min(innerHeight - h - 12, e.clientY - h / 2)); // clear of the top bar
+      pop.style.left = x + "px"; pop.style.top = y + "px";
+      pop.style.transformOrigin = `${e.clientX < x ? 0 : 100}% 50%`;
+      if (!pop.classList.contains("show")) window.sfx.play("open");
+      pop.classList.add("show");
+    };
+    const hide = () => { clearTimeout(showT); hideT = setTimeout(() => pop.classList.remove("show"), 260); };
+    previews.forEach(a => {
+      a.addEventListener("pointerenter", e => { clearTimeout(hideT); clearTimeout(showT); showT = setTimeout(() => show(a, e), pop.classList.contains("show") ? 0 : 280); });
+      a.addEventListener("pointerleave", hide);
+    });
+    pop.addEventListener("pointerenter", () => clearTimeout(hideT));
+    pop.addEventListener("pointerleave", hide);
+    addEventListener("keydown", e => e.key === "Escape" && pop.classList.remove("show"));
+    addEventListener("scroll", () => { if (!pop.matches(":hover")) pop.classList.remove("show"); }, { passive: true });
+  }
+
+  // ---------- about: each off-duty card opens its own little scene in a full-screen overlay ----------
+  // overlay(cls, label, html) -> { fx, close, onClose }; closes on Escape, a click on the backdrop, or any [data-close]
+  const overlay = (cls, label, html) => {
+    if ($(".duty-fx")) return null;
+    const fx = document.createElement("div");
+    fx.className = "duty-fx " + cls;
+    fx.setAttribute("role", "dialog");
+    fx.setAttribute("aria-label", label);
+    fx.innerHTML = html;
+    document.body.appendChild(fx);
+    window.lenis?.stop();
+    const cleanups = [];
+    const close = () => {
+      if (fx.classList.contains("out")) return;
+      fx.classList.add("out");
+      window.sfx.play("close");
+      window.lenis?.start();
+      removeEventListener("keydown", esc);
+      cleanups.forEach(f => f());
+      setTimeout(() => fx.remove(), 450);
+    };
+    const esc = e => e.key === "Escape" && close();
+    addEventListener("keydown", esc);
+    fx.addEventListener("click", e => { if (e.target === fx || e.target.closest("[data-close]")) close(); });
+    return { fx, close, onClose: f => cleanups.push(f) };
+  };
+
+  // anime: speed lines, an impact frame, ゴゴゴ, petals and a title card
+  const animeFx = () => {
+    const go = Array.from({ length: 7 }, (_, i) => `<i class="af-go" style="--x:${8 + Math.random() * 84}%;--y:${10 + Math.random() * 75}%;--d:${(i * 0.09).toFixed(2)}s;--r:${(Math.random() * 30 - 15).toFixed(0)}deg">ゴ</i>`).join("");
+    const petals = Array.from({ length: 22 }, () => `<i class="af-petal" style="--x:${Math.random() * 100}%;--d:${(Math.random() * 4).toFixed(2)}s;--t:${(5 + Math.random() * 5).toFixed(1)}s;--s:${(0.6 + Math.random() * 0.8).toFixed(2)}"></i>`).join("");
+    const o = overlay("anime-fx", "Anime Studio", '<i class="af-lines"></i><i class="af-flash"></i>' + go + petals +
+      '<div class="af-card"><small>第27話 · Episode 27</small><b>Anime Studio</b><span class="af-jp">アニメ・スタジオ</span>' +
+      '<p>The anime habit turned into a living Wear OS watch face. Coming soon to Google Play.</p>' +
+      '<div class="af-acts"><a class="btn solid arrow" href="https://apps.samridhashrestha.com.np/animestudio/" target="_blank" rel="noopener">See Anime Studio</a>' +
+      '<button class="btn" type="button" data-close>To be continued →</button></div></div>');
+    if (!o) return;
+    window.sfx.play("powerup");
+    setTimeout(() => window.sfx.play("boom"), reduce ? 0 : 850);
+    setTimeout(() => $(".af-card .btn", o.fx)?.focus({ preventScroll: true }), reduce ? 0 : 1200);
+  };
+
+  // music: a guitar neck. Drag across the strings to strum, tap one to pluck, or pick a chord
+  const guitarFx = () => {
+    const OPEN = [82.41, 110, 146.83, 196, 246.94, 329.63]; // E2 A2 D3 G3 B3 E4, low to high
+    const CHORDS = { Em: [0, 2, 2, 0, 0, 0], G: [3, 2, 0, 0, 0, 3], C: [-1, 3, 2, 0, 1, 0], D: [-1, -1, 0, 2, 3, 2], Am: [-1, 0, 2, 2, 1, 0] };
+    const o = overlay("guitar-fx", "Guitar", '<div class="gt">' +
+      '<small>Standard tuning · E A D G B E</small><b>Play something</b>' +
+      '<div class="gt-neck" data-lenis-prevent>' + '<i class="gt-fret"></i>'.repeat(5) + '<i class="gt-dot"></i>' +
+      OPEN.map((_, k) => `<i class="gt-str" style="--k:${k}"></i>`).reverse().join("") + "</div>" + // high E on top, as you look down at it
+      '<div class="gt-chords">' + Object.keys(CHORDS).map(c => `<button type="button" class="btn" data-chord="${c}">${c}</button>`).join("") + "</div>" +
+      `<p class="gt-hint">${matchMedia("(hover: none)").matches ? "Swipe down the strings to strum, or tap one to pluck." : "Drag across the strings to strum. Keys 1 to 5 play the chords."}</p>` + '<button class="btn" type="button" data-close>Put it down</button></div>');
+    if (!o) return;
+    const neck = $(".gt-neck", o.fx), wires = $$(".gt-str", o.fx).reverse(), chordBtns = $$("[data-chord]", o.fx);
+    let chord = "Em", last = null;
+    const note = k => CHORDS[chord][k] < 0 ? null : OPEN[k] * Math.pow(2, CHORDS[chord][k] / 12);
+    const ring = k => {
+      const f = note(k);
+      if (!f) return;
+      window.sfx.pluck(f, 0.3);
+      wires[k].classList.remove("hum"); void wires[k].offsetWidth; wires[k].classList.add("hum");
+    };
+    const pick = name => {
+      chord = name;
+      chordBtns.forEach(b => b.classList.toggle("on", b.dataset.chord === name));
+      [0, 1, 2, 3, 4, 5].forEach((k, i) => setTimeout(() => ring(k), i * 28)); // a quick downstroke
+    };
+    chordBtns.forEach(b => b.addEventListener("click", () => pick(b.dataset.chord)));
+    chordBtns[0].classList.add("on");
+    // the strings are horizontal; whichever band the pointer is in is the string under it (high E at the top)
+    const stringAt = e => {
+      const r = neck.getBoundingClientRect(), k = 5 - Math.floor(((e.clientY - r.top) / r.height) * 6);
+      return k >= 0 && k <= 5 ? k : null;
+    };
+    neck.addEventListener("pointerdown", e => {
+      try { neck.setPointerCapture(e.pointerId); } catch {} // keeps the strum going if the finger slides off the neck
+      last = stringAt(e);
+      if (last !== null) ring(last);
+    });
+    neck.addEventListener("pointermove", e => {
+      if (e.pointerType !== "mouse" && !e.buttons) return;
+      const k = stringAt(e);
+      if (k === null || last === null || k === last) { last = k; return; }
+      const step = k > last ? 1 : -1;
+      for (let j = last + step; j !== k + step; j += step) ring(j);
+      last = k;
+    });
+    neck.addEventListener("pointerleave", () => (last = null));
+    const keys = e => { const c = Object.keys(CHORDS)[+e.key - 1]; if (c) pick(c); };
+    addEventListener("keydown", keys);
+    o.onClose(() => removeEventListener("keydown", keys));
+    pick("Em");
+  };
+
+  // gaming: the queue pops, like it does on Summoner's Rift. Accept and the asteroid blaster loads in
+  const leagueFx = () => {
+    const C = 2 * Math.PI * 46;
+    const o = overlay("league-fx", "Match found", '<div class="lol">' +
+      '<small>Summoner\'s Rift · 5v5 · Ranked Solo/Duo</small><b>Match found</b>' +
+      `<div class="lol-ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46"/><circle class="lol-t" cx="50" cy="50" r="46" style="stroke-dasharray:${C};stroke-dashoffset:0"/></svg><span>10</span></div>` +
+      '<button class="lol-accept" type="button">Accept!</button><button class="lol-decline" type="button" data-close>Decline</button>' +
+      '<p class="lol-msg" aria-live="polite"></p></div>');
+    if (!o) return;
+    window.sfx.play("queue");
+    const ring = $(".lol-t", o.fx), num = $(".lol-ring span", o.fx), msg = $(".lol-msg", o.fx), t0 = performance.now();
+    let done = false;
+    const tick = now => {
+      if (done || !o.fx.isConnected) return;
+      const left = Math.max(0, 10 - (now - t0) / 1000);
+      ring.style.strokeDashoffset = C * (1 - left / 10);
+      num.textContent = Math.ceil(left);
+      if (left <= 0) { done = true; msg.textContent = "You missed the queue. Dodge penalty applied."; setTimeout(o.close, 1600); return; }
       requestAnimationFrame(tick);
     };
-    tick();
+    requestAnimationFrame(tick);
+    $(".lol-accept", o.fx).addEventListener("click", () => {
+      if (done) return;
+      done = true;
+      o.fx.classList.add("accepted");
+      window.sfx.play("ok");
+      msg.textContent = "Welcome to Summoner's Rift.";
+      setTimeout(() => { o.close(); setTimeout(startBlaster, 300); }, 1700);
+    });
   };
+
+  // sports: a penalty at the Stretford End. Pick a corner; the keeper guesses
+  const unitedFx = () => {
+    const o = overlay("united-fx", "Penalty", '<div class="pk">' +
+      '<small>Old Trafford · Theatre of Dreams</small><b>Penalty to United</b>' +
+      '<div class="pk-pitch"><div class="pk-goal"><i class="pk-keeper"></i>' +
+      ["Bottom left", "Down the middle", "Top right"].map((t, i) => `<button type="button" class="pk-zone" data-z="${i}" aria-label="Shoot ${t.toLowerCase()}"></button>`).join("") +
+      '</div><i class="pk-ball"></i></div>' +
+      '<p class="pk-msg" aria-live="polite">Pick your corner.</p><p class="pk-score">Goals <b>0</b> · Saved <b>0</b></p>' +
+      '<button class="btn" type="button" data-close>Back to the dressing room</button></div>');
+    if (!o) return;
+    const pitch = $(".pk-pitch", o.fx), msg = $(".pk-msg", o.fx), [goals, saves] = $$(".pk-score b", o.fx);
+    let busy = false;
+    $$(".pk-zone", o.fx).forEach(z => z.addEventListener("click", () => {
+      if (busy) return;
+      busy = true;
+      const aim = +z.dataset.z, dive = Math.floor(Math.random() * 3), scored = aim !== dive;
+      pitch.dataset.aim = aim; pitch.dataset.dive = dive;
+      pitch.classList.remove("goal", "saved"); void pitch.offsetWidth; pitch.classList.add("shot");
+      window.sfx.play("press");
+      setTimeout(() => {
+        pitch.classList.add(scored ? "goal" : "saved");
+        if (scored) { goals.textContent = +goals.textContent + 1; msg.textContent = "GOAL! Glory Glory Man United!"; window.sfx.play("crowd"); window.sfx.play("ok"); }
+        else { saves.textContent = +saves.textContent + 1; msg.textContent = "Saved. Go again."; window.sfx.play("thud"); }
+      }, 480);
+      setTimeout(() => { pitch.classList.remove("shot", "goal", "saved"); busy = false; if (scored) msg.textContent = "Again? Pick a corner."; }, 2200);
+    }));
+  };
+
+  // ---------- about: off-duty cards do something ----------
+  $$("[data-duty]").forEach(card => card.addEventListener("click", () => {
+    ({ music: guitarFx, game: leagueFx, sports: unitedFx, anime: animeFx })[card.dataset.duty]?.();
+  }));
 
   // ---------- intro: role line types itself out ----------
   const typer = $(".typer");
@@ -1219,12 +1436,6 @@
   if ($(".orbit-map")) gsap.fromTo(".orbit-map", { scale: 0.6, opacity: 0 }, {
     scale: 1, opacity: 1, ease: "none", scrollTrigger: { trigger: ".orbit-wrap", start: "top 95%", end: "top 45%", scrub: true },
   });
-
-  // showcase counter follows the active project
-  const counter = $(".showcase-count b");
-  if (counter) $$(".showcase-media figure").forEach((f, i) => ScrollTrigger.create({
-    trigger: f, start: "top 55%", end: "bottom 45%", onToggle: self => self.isActive && (counter.textContent = String(i + 1).padStart(2, "0")),
-  }));
 
   addEventListener("load", () => ScrollTrigger.refresh());
 })();

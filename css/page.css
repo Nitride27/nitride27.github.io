@@ -48,7 +48,7 @@ body {
   color: var(--ink);
   background: var(--bg);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip; /* hidden would make body a scroll container and break every position: sticky */
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1190,6 +1190,35 @@ p {
 @media (min-width: 901px) {
   .showcase-media .mobile-copy {
     display: none;
+  }
+
+  /* one pinned frame: every project's figure sits in the same sticky slot, and scrolling cross-fades between them */
+  .showcase-media {
+    display: block;
+    padding: 0;
+    height: calc(4 * 80vh + 20vh);
+  }
+
+  .showcase-media > div {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    margin-bottom: -100vh;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .showcase-media > div > figure {
+    width: 100%;
+    pointer-events: auto;
+    transition: opacity .6s var(--ease), transform .9s var(--ease);
+  }
+
+  .showcase-media > div > figure:not(.on) {
+    opacity: 0;
+    transform: translateY(36px) scale(.96);
+    pointer-events: none;
   }
 }
 
@@ -3255,3 +3284,345 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
 }
 @keyframes bg-scroll { from { background-position: 50% 0; } to { background-position: 50% 100%; } }
 @media (pointer: coarse) { .rows li > a { min-height: 40px; align-items: center; } }
+
+/* =========================
+   SITE PREVIEW: a live browser window that pops out beside a hovered site link
+   ========================= */
+.site-pop {
+  position: fixed;
+  z-index: 450;
+  width: var(--w, 640px);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0b0b0b;
+  border: 1px solid color-mix(in srgb, var(--planet) 40%, var(--line));
+  box-shadow: 0 0 50px color-mix(in srgb, var(--planet) 18%, transparent), 0 40px 80px rgba(0, 0, 0, .7);
+  opacity: 0;
+  transform: scale(.92) translateY(8px);
+  pointer-events: none;
+  transition: opacity .25s, transform .45s var(--ease);
+}
+.site-pop.show { opacity: 1; transform: none; pointer-events: auto; }
+.site-pop .browser-bar a { margin-left: auto; font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; color: var(--planet); }
+.site-pop-body { position: relative; height: var(--h, 420px); background: #111; overflow: hidden; }
+.site-pop iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1280px;
+  height: calc(var(--h, 420px) / var(--s, .5));
+  border: 0;
+  transform: scale(var(--s, .5));
+  transform-origin: 0 0;
+  background: #fff;
+  opacity: 0;
+  transition: opacity .5s;
+}
+.site-pop.loaded iframe { opacity: 1; }
+.site-pop-shot { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.site-pop-shot img { display: block; width: 100%; }
+.site-pop-load {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px);
+}
+.site-pop-load::after { content: '...'; animation: blink 1s steps(1) infinite; }
+.site-pop.loaded .site-pop-load { display: none; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* =========================
+   ANIME: hover the card for screentone and ゴゴゴ; click it for a full power-up
+   ========================= */
+.duty .tone {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--planet) 35%, transparent) 1px, transparent 1.6px) 0 0 / 7px 7px;
+  mask-image: linear-gradient(135deg, transparent 30%, #000);
+  opacity: 0;
+  transition: opacity .5s;
+  pointer-events: none;
+}
+.duty .menace {
+  font-style: normal;
+  position: absolute;
+  right: .9rem;
+  top: .6rem;
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: -.05em;
+  color: var(--planet);
+  opacity: 0;
+  transform: translateX(10px) skewX(-12deg);
+  transition: opacity .4s, transform .5s var(--ease);
+  pointer-events: none;
+}
+.duty:hover .tone, .duty:focus-visible .tone { opacity: 1; }
+.duty:hover .menace, .duty:focus-visible .menace { opacity: .9; transform: skewX(-12deg); animation: menace .18s steps(2) infinite; }
+@keyframes menace { 50% { translate: 1px -1px; } }
+
+.duty-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .9);
+  backdrop-filter: blur(8px);
+  animation: af-in .3s both;
+}
+.duty-fx.out { animation: af-in .45s reverse both; }
+@keyframes af-in { from { opacity: 0; } }
+
+/* manga speed lines converging on the centre */
+.af-lines {
+  position: absolute;
+  inset: -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .55) 0 .6deg, transparent .6deg 4deg);
+  mask-image: radial-gradient(circle, transparent 18%, #000 42%);
+  animation: af-lines .9s cubic-bezier(.2, .8, .2, 1) both, af-spin .12s steps(2) infinite;
+}
+@keyframes af-lines { from { opacity: 0; transform: scale(2.4); } 60% { opacity: 1; } to { opacity: .45; transform: scale(1); } }
+@keyframes af-spin { 50% { rotate: 1.2deg; } }
+
+/* impact frame: a white flash, then the card slams in */
+.af-flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: af-flash .5s .82s both; pointer-events: none; }
+@keyframes af-flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+
+.af-go {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  font-style: normal;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 6vw, 4.5rem);
+  color: var(--planet);
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+  transform: rotate(var(--r)) skewX(-10deg);
+  opacity: 0;
+  animation: af-go 1.6s var(--d) both, menace .16s steps(2) infinite;
+  pointer-events: none;
+}
+@keyframes af-go { 0% { opacity: 0; scale: .4; } 20% { opacity: 1; scale: 1.15; } 70% { opacity: .85; scale: 1; } 100% { opacity: .35; scale: 1; } }
+
+.af-petal {
+  position: absolute;
+  left: var(--x);
+  top: -5%;
+  width: 12px;
+  height: 9px;
+  border-radius: 80% 0 80% 0;
+  background: linear-gradient(135deg, #ffd6e4, #ff9cc0);
+  scale: var(--s);
+  opacity: .9;
+  animation: af-fall var(--t) var(--d) linear infinite;
+  pointer-events: none;
+}
+@keyframes af-fall { to { transform: translate(-12vw, 112vh) rotate(720deg); } }
+
+.af-card {
+  position: relative;
+  width: min(460px, calc(100vw - 2rem));
+  padding: 1.8rem 1.8rem 1.6rem;
+  border: 3px solid #fff;
+  border-radius: 4px;
+  background: #0a0a0a;
+  box-shadow: 8px 8px 0 var(--planet), 0 0 60px color-mix(in srgb, var(--planet) 35%, transparent);
+  transform: rotate(-2deg);
+  animation: af-slam .5s .85s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+@keyframes af-slam { from { opacity: 0; transform: scale(2.2) rotate(6deg); } }
+.af-card small { font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--planet); }
+.af-card b { display: block; margin: .4rem 0 .1rem; font-family: var(--display); font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.6rem); text-transform: uppercase; line-height: 1; }
+.af-jp { display: block; font-weight: 900; font-size: 1.05rem; letter-spacing: .3em; color: var(--muted); }
+.af-card p { margin: 1rem 0 1.4rem; color: var(--muted); }
+.af-acts { display: flex; flex-wrap: wrap; gap: .7rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .af-lines, .af-go, .af-petal, .af-card, .af-flash { animation: none; }
+  .af-go, .af-petal, .af-flash { display: none; }
+}
+
+/* =========================
+   OFF DUTY: a United-red ball and League gold on the cards
+   ========================= */
+.duty[data-duty="sports"] .ball { background: radial-gradient(circle at 35% 35%, #fff 0 18%, #da291c 24% 60%, #7a0f0a); }
+
+.duty[data-duty="game"] { transition: border-color .5s, box-shadow .5s; }
+.duty[data-duty="game"]:hover { border-color: #c8aa6e; box-shadow: inset 0 0 0 1px #c8aa6e55, 0 0 30px #0ac8b922; }
+.duty[data-duty="game"]:hover .duty-glyph { color: #c8aa6e; text-shadow: 0 0 14px #0ac8b9; }
+
+
+
+/* shared card inside each off-duty scene */
+.gt, .lol, .pk { position: relative; display: grid; justify-items: center; gap: 1rem; width: min(760px, calc(100vw - 2rem)); text-align: center; animation: af-slam .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.gt small, .lol small, .pk small { font-family: var(--mono); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.gt > b, .lol > b, .pk > b { font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 5vw, 2.4rem); text-transform: uppercase; line-height: 1; }
+
+/* =========================
+   GUITAR: a rosewood neck with six strings
+   ========================= */
+.gt-neck {
+  position: relative;
+  width: 100%;
+  height: min(260px, 38vh);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, #e8dcc0 0 14px, transparent 14px), /* the nut */
+    linear-gradient(180deg, #3a2318, #2a170f 50%, #3a2318);
+  box-shadow: inset 0 0 0 1px #00000080, 0 30px 60px rgba(0, 0, 0, .6);
+  touch-action: none;
+  cursor: grab;
+  overflow: hidden;
+}
+.gt-neck:active { cursor: grabbing; }
+.gt-fret { position: absolute; top: 0; bottom: 0; width: 3px; background: linear-gradient(90deg, #9a9a9a, #e9e9e9, #8a8a8a); }
+.gt-fret:nth-child(1) { left: 20%; } .gt-fret:nth-child(2) { left: 38%; } .gt-fret:nth-child(3) { left: 54%; }
+.gt-fret:nth-child(4) { left: 68%; } .gt-fret:nth-child(5) { left: 81%; }
+.gt-dot { position: absolute; left: 46%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #e8dcc0; opacity: .8; }
+.gt-str {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc((5 - var(--k)) * 16.66% + 8.33%);
+  background: linear-gradient(#fff6, #d9c9a0, #8a7a55);
+  box-shadow: 0 2px 3px #0008;
+}
+.gt-str[style*="--k:0"] { height: 4px; } .gt-str[style*="--k:1"] { height: 3.4px; } .gt-str[style*="--k:2"] { height: 2.8px; }
+.gt-str[style*="--k:3"] { height: 2.2px; } .gt-str[style*="--k:4"] { height: 1.6px; } .gt-str[style*="--k:5"] { height: 1.2px; }
+.gt-str.hum { animation: gt-hum .9s ease-out; }
+@keyframes gt-hum {
+  0% { background: var(--planet); box-shadow: 0 0 14px var(--planet); transform: translateY(3px); }
+  8% { transform: translateY(-3px); } 16% { transform: translateY(2px); } 24% { transform: translateY(-1.5px); }
+  36% { transform: translateY(1px); } 50%, 100% { transform: none; }
+}
+.gt-chords { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; }
+.gt-chords .btn { min-width: 64px; justify-content: center; }
+.gt-chords .btn.on { background: var(--planet); border-color: var(--planet); color: #000; }
+.gt-hint { color: var(--muted); font-size: .85rem; }
+
+/* =========================
+   LEAGUE: the queue pop
+   ========================= */
+.league-fx { background: radial-gradient(circle at 50% 45%, #0a1a24ee, #010a13f5 70%); }
+.lol {
+  width: min(420px, calc(100vw - 2rem));
+  padding: 2rem 1.6rem 1.6rem;
+  border: 2px solid #c8aa6e;
+  background: linear-gradient(#010a13, #0a1428);
+  box-shadow: 0 0 0 1px #785a28, 0 0 60px #0ac8b933, inset 0 0 40px #0ac8b914;
+}
+.lol::before, .lol::after { content: ''; position: absolute; left: 50%; width: 14px; height: 14px; margin-left: -7px; background: #c8aa6e; transform: rotate(45deg); }
+.lol::before { top: -8px; } .lol::after { bottom: -8px; }
+.lol small { color: #a09b8c; }
+.lol > b { color: #f0e6d2; letter-spacing: .04em; }
+.lol-ring { position: relative; width: 120px; height: 120px; }
+.lol-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.lol-ring circle { fill: none; stroke: #1e2328; stroke-width: 4; }
+.lol-ring .lol-t { stroke: #0ac8b9; filter: drop-shadow(0 0 6px #0ac8b9); }
+.lol-ring span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 2rem; color: #f0e6d2; }
+.lol-accept {
+  width: 100%;
+  padding: .9rem;
+  border: 2px solid #0ac8b9;
+  background: linear-gradient(#1e2328, #0a1428);
+  color: #cdfafa;
+  font: inherit;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 20px #0ac8b944;
+  transition: background .25s, box-shadow .25s;
+}
+.lol-accept:hover { background: linear-gradient(#0ac8b933, #0a1428); box-shadow: 0 0 30px #0ac8b988; }
+.lol-decline { background: none; border: 0; color: #a09b8c; font: inherit; font-size: .85rem; cursor: pointer; text-decoration: underline; }
+.lol-msg { min-height: 1.4em; color: #c8aa6e; font-family: var(--display); letter-spacing: .06em; }
+.league-fx.accepted .lol { border-color: #0ac8b9; }
+.league-fx.accepted .lol-accept { background: #0ac8b9; color: #010a13; }
+
+/* =========================
+   UNITED: a penalty at Old Trafford
+   ========================= */
+.united-fx { background: radial-gradient(circle at 50% 30%, #3a0805f2, #0b0202f7 70%); }
+.pk { width: min(560px, calc(100vw - 2rem)); }
+.pk > b { color: #fff; text-shadow: 0 0 24px #da291c; }
+.pk small { color: #fbe122; }
+.pk-pitch {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: repeating-linear-gradient(180deg, #1f6b2a 0 30px, #237a30 30px 60px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .6);
+}
+.pk-goal {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 18px;
+  height: 130px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 5px solid #fff;
+  border-bottom: 0;
+  background: repeating-linear-gradient(45deg, #ffffff22 0 1px, transparent 1px 10px), repeating-linear-gradient(-45deg, #ffffff22 0 1px, transparent 1px 10px), #0004;
+}
+.pk-zone { position: relative; z-index: 2; border: 0; background: none; cursor: crosshair; transition: background .2s; }
+.pk-zone:hover, .pk-zone:focus-visible { background: #da291c33; outline: none; }
+.pk-keeper {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 34px;
+  height: 70px;
+  margin-left: -17px;
+  border-radius: 14px 14px 4px 4px;
+  background: linear-gradient(#222 0 26%, #3fbf3f 26%);
+  transform-origin: 50% 100%;
+  transition: transform .4s cubic-bezier(.3, .8, .4, 1);
+}
+.pk-ball {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0 30%, #ccc 60%, #777);
+  box-shadow: 0 6px 10px #0008;
+  transition: transform .45s cubic-bezier(.2, .7, .3, 1);
+}
+.pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-80px) rotate(-70deg); }
+.pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(80px) rotate(70deg); }
+.pk-pitch.shot[data-dive="1"] .pk-keeper { transform: translateY(-14px); }
+.pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-140px, -135px) scale(.55) rotate(-540deg); }
+.pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -160px) scale(.55) rotate(540deg); }
+.pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(140px, -200px) scale(.55) rotate(540deg); }
+.pk-pitch.saved .pk-ball { transform: translate(0, -60px) scale(.8) !important; transition-duration: .5s; }
+.pk-pitch.goal { animation: pk-goal .8s ease-out; }
+@keyframes pk-goal { 0% { box-shadow: 0 0 0 0 #da291c, 0 30px 60px #0009; } 40% { box-shadow: 0 0 0 10px #da291c, 0 0 80px #da291c; } }
+.pk-msg { min-height: 1.4em; font-family: var(--display); font-weight: 600; font-size: 1.15rem; color: #fff; }
+.pk-score { color: var(--muted); font-size: .85rem; }
+.pk-score b { color: #fff; font-weight: 600; }
+@media (max-width: 560px) {
+  .pk-pitch { height: 250px; }
+  .pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-95px, -86px) scale(.55); }
+  .pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -111px) scale(.55); }
+  .pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(95px, -161px) scale(.55); }
+  .pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-55px) rotate(-70deg); }
+  .pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(55px) rotate(70deg); }
+}
+@media (prefers-reduced-motion: reduce) { .gt, .lol, .pk { animation: none; } .gt-str.hum { animation: none; } }
