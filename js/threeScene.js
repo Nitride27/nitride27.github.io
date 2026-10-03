@@ -407,7 +407,7 @@
     landing = true;
     const g = planets[i], p = PLANETS[i];
     tip.classList.remove("show");
-    sfx.play("descend");
+    sfx.play("landing"); // retro burn, braking pulses, touchdown at ~1.45s; the page changes at ~1.65s
     const href = p.id + ".html";
     const go = () => (window.leaveTo ? leaveTo(href) : (location.href = href));
     if (reduce || typeof gsap === "undefined") return go();

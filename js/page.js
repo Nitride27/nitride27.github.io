@@ -166,23 +166,33 @@
     src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
-  // engine rev: two detuned oscillators driven into a soft-clip curve, the filter opening as the revs climb
-  let drive = null;
-  const clip = () => drive || (drive = new Float32Array(1024).map((_, i) => Math.tanh((i / 512 - 1) * 6)));
+  // engine surge: a turbine spinning up, a clean whine sweeping high over a deep sub, with a rush of air
   const rev = () => {
     const c = ac(); if (!c) return;
-    const t = c.currentTime, dur = 1.4, sh = c.createWaveShaper(), f = c.createBiquadFilter();
-    sh.curve = clip();
-    f.type = "lowpass"; f.Q.value = 3;
-    f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(2400, t + 0.4); f.frequency.exponentialRampToValueAtTime(320, t + dur);
-    [["sawtooth", 1], ["square", 1.012]].forEach(([type, k]) => {
+    const t = c.currentTime, dur = 1.5;
+    [["sine", 55, 110, 0.32], ["triangle", 220, 880, 0.07], ["sine", 440, 1760, 0.035]].forEach(([type, f0, f1, vol]) => {
       const o = c.createOscillator();
       o.type = type;
-      o.frequency.setValueAtTime(42 * k, t); o.frequency.exponentialRampToValueAtTime(150 * k, t + 0.42); o.frequency.exponentialRampToValueAtTime(64 * k, t + dur);
-      o.connect(sh); o.start(t); o.stop(t + dur + 0.05);
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.55); o.frequency.exponentialRampToValueAtTime(f1 * 0.7, t + dur);
+      o.connect(env(c, t, vol, 0.25, dur)); o.start(t); o.stop(t + dur + 0.05);
     });
-    sh.connect(f).connect(env(c, t, 0.5, 0.1, dur));
-    hiss(dur * 0.9, { from: 260, to: 1900, vol: 0.22, q: 0.6, attack: 0.18 });
+    hiss(dur, { from: 200, to: 3000, vol: 0.2, q: 0.7, attack: 0.45 });
+  };
+  // landing, played on the page you leave (a new page can't make sound until it's clicked): a retro burn that
+  // brakes in pulses as it drops, then the thud of the legs touching down
+  const landing = () => {
+    if (!ac()) return;
+    hiss(1.6, { from: 1800, to: 140, vol: 0.32, q: 0.5, attack: 0.08 });
+    tone(140, 1.6, { vol: 0.2, to: 45, attack: 0.1 });
+    [0.45, 0.75, 1.0, 1.2].forEach(d => hiss(0.16, { from: 900, to: 400, vol: 0.18, q: 1.5, attack: 0.02, delay: d }));
+    tone(95, 0.5, { vol: 0.42, to: 32, delay: 1.45 });
+    hiss(0.5, { from: 500, to: 80, vol: 0.25, attack: 0.01, delay: 1.45 });
+  };
+  // launch: ignition, then the roar climbing away
+  const launch = () => {
+    if (!ac()) return;
+    tone(40, 1.4, { vol: 0.3, to: 120, attack: 0.3 });
+    hiss(1.4, { from: 120, to: 2600, vol: 0.34, q: 0.45, attack: 0.35 });
   };
   const buzz = ms => haptic && navigator.userActivation?.hasBeenActive && navigator.vibrate(ms);
   const SOUNDS = {
@@ -192,6 +202,8 @@
     hover: () => swoosh(0.45, 0.12),
     coin: () => { tone(1568, 0.12, { type: "triangle", vol: 0.1 }); tone(2093, 0.25, { type: "triangle", vol: 0.09, delay: 0.06 }); },
     rev: () => { rev(); buzz(30); },
+    landing: () => { landing(); setTimeout(() => buzz(40), 1450); },
+    launch: () => { launch(); buzz(20); },
     queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
     crowd: () => { hiss(2.6, { from: 500, to: 1100, vol: 0.3, q: 0.4, attack: 0.5 }); hiss(2.2, { from: 1500, to: 2600, vol: 0.12, q: 0.6, attack: 0.4, delay: 0.1 }); },
     powerup: () => { tone(110, 1, { type: "sawtooth", vol: 0.07, to: 880, attack: 0.8 }); hiss(1, { from: 200, to: 5000, vol: 0.2, attack: 0.9 }); },
@@ -207,30 +219,35 @@
     open: () => hiss(0.35, { from: 600, to: 2400, vol: 0.08, q: 3, attack: 0.05 }),
     close: () => hiss(0.3, { from: 2400, to: 600, vol: 0.07, q: 3, attack: 0.05 }),
   };
-  // engine: a throaty, throbbing drive. Two detuned saws and a sub-octave square, plus a little noise, are pushed
-  // through a soft clip; a tremolo that speeds up with the throttle gives the hammering. Call it every frame with 0..1
+  // engine: a spaceship drive, not a car. A clean sub-bass drone, a lowpassed rumble, a turbine whine that climbs
+  // with the throttle (with a slow drift so it never sits still), and a hiss of thrust. Call it every frame with 0..1
   const engine = level => {
     if (!eng) {
       const c = ac(); if (!c) return;
-      const mk = (type, mul) => { const o = c.createOscillator(); o.type = type; o.start(); return [o, mul]; };
-      const oscs = [mk("sawtooth", 1), mk("sawtooth", 1.007), mk("square", 0.5)];
-      const noise = c.createBufferSource(), ng = c.createGain(), sh = c.createWaveShaper(), f = c.createBiquadFilter();
-      const trem = c.createGain(), lfo = c.createOscillator(), depth = c.createGain(), g = c.createGain();
-      noise.buffer = noiseBuf; noise.loop = true; ng.gain.value = 0.25; noise.start();
-      sh.curve = clip();
-      f.type = "lowpass"; f.Q.value = 2.5;
-      trem.gain.value = 0.7; depth.gain.value = 0.3; lfo.frequency.value = 7; lfo.start();
-      lfo.connect(depth).connect(trem.gain);
-      oscs.forEach(([o]) => o.connect(sh)); noise.connect(ng).connect(sh);
-      sh.connect(f).connect(trem).connect(g).connect(master);
-      g.gain.value = 0;
-      eng = { oscs, f, g, lfo };
+      const osc = (type, gain) => { const o = c.createOscillator(), g = c.createGain(); o.type = type; g.gain.value = gain; o.connect(g); o.start(); return [o, g]; };
+      const [sub, subG] = osc("sine", 0.5), [sub2, sub2G] = osc("sine", 0.18), [whine, whineG] = osc("triangle", 0.04);
+      const drift = c.createOscillator(), driftG = c.createGain();
+      drift.frequency.value = 0.25; driftG.gain.value = 6; drift.connect(driftG).connect(whine.frequency); drift.start();
+      const rumble = c.createBufferSource(), rumbleF = c.createBiquadFilter(), rumbleG = c.createGain();
+      rumble.buffer = noiseBuf; rumble.loop = true; rumbleF.type = "lowpass"; rumbleF.frequency.value = 180; rumbleG.gain.value = 0.5;
+      rumble.connect(rumbleF).connect(rumbleG); rumble.start();
+      const thrust = c.createBufferSource(), thrustF = c.createBiquadFilter(), thrustG = c.createGain();
+      thrust.buffer = noiseBuf; thrust.loop = true; thrustF.type = "bandpass"; thrustF.Q.value = 0.7; thrustG.gain.value = 0;
+      thrust.connect(thrustF).connect(thrustG); thrust.start(0, 0.7);
+      const g = c.createGain(); g.gain.value = 0;
+      [subG, sub2G, whineG, rumbleG, thrustG].forEach(n => n.connect(g));
+      g.connect(master);
+      eng = { sub, sub2, whine, whineG, rumbleF, thrustF, thrustG, g };
     }
-    const t = actx.currentTime, l = Math.max(0, Math.min(1, level)), base = 34 + l * 70;
-    eng.g.gain.setTargetAtTime(l > 0.02 ? 0.05 + l * 0.3 : 0, t, 0.15);
-    eng.f.frequency.setTargetAtTime(220 + l * 1600, t, 0.15);
-    eng.lfo.frequency.setTargetAtTime(6 + l * 16, t, 0.15);
-    eng.oscs.forEach(([o, mul]) => o.frequency.setTargetAtTime(base * mul, t, 0.15));
+    const t = actx.currentTime, l = Math.max(0, Math.min(1, level)), k = 0.2;
+    eng.g.gain.setTargetAtTime(l > 0.02 ? 0.12 + l * 0.4 : 0, t, k);
+    eng.sub.frequency.setTargetAtTime(48 + l * 22, t, k);
+    eng.sub2.frequency.setTargetAtTime(96 + l * 44, t, k);
+    eng.whine.frequency.setTargetAtTime(180 + l * 520, t, k);
+    eng.whineG.gain.setTargetAtTime(0.025 + l * 0.05, t, k);
+    eng.rumbleF.frequency.setTargetAtTime(140 + l * 260, t, k);
+    eng.thrustF.frequency.setTargetAtTime(600 + l * 1800, t, k);
+    eng.thrustG.gain.setTargetAtTime(l * 0.35, t, k);
   };
   // swoosh: a wide band of air that sweeps up and back down while it pans across, like something passing close by
   const swoosh = (dur = 1.2, vol = 0.4) => {
@@ -261,7 +278,6 @@
     src.start();
   };
   window.sfx = { play: name => { if (!reduce || name !== "warp") SOUNDS[name]?.(); }, engine, pluck };
-  const whoosh = () => !reduce && SOUNDS.whoosh();
   // silent while the tab is hidden
   const quiet = () => actx && (document.hidden ? actx.suspend() : actx.resume()).catch(() => {});
   document.addEventListener("visibilitychange", quiet);
@@ -356,7 +372,7 @@
     veil.dataset.mode = isIndex ? "approach" : "launch";
     void veil.offsetWidth; // restart the CSS animation if the mode didn't change
     document.body.classList.add("is-leaving");
-    whoosh();
+    if (!reduce && !isIndex) window.sfx.play("launch"); // the home page starts its landing sound when you click, so the touchdown lands before the page changes
     if (reduce) return (location.href = href);
     countAlt(isIndex ? 40000 : 0, 12000, 900, () => (location.href = href)); // descending from orbit counts down into the arrival readout
   };
@@ -869,14 +885,15 @@
     toast("Opening your mail app…");
   });
 
-  // ---------- last hit: a minion lane on Summoner's Rift. Blue and red waves meet and fight for real; you only
-  // get the gold if your hit is the one that kills. Click a minion to auto-attack, Q (or the Q button) for a
-  // skillshot down the lane. 75 seconds, graded on the share of the wave you took. ----------
+  // ---------- last hit: a minion lane on Summoner's Rift. Blue and red waves meet and fight; you only get the gold
+  // if your hit kills. Click the lane to move, click a red minion to attack it, Q for a skillshot. Stand too far
+  // forward and their minions and turret turn on you. Levels and items raise your damage. 90 seconds, graded. ----------
   let playing = false;
   const startGame = () => {
     if (playing) return;
     playing = true;
     window.lenis?.stop();
+    const touchUI = matchMedia("(hover: none)").matches;
     const cv = document.createElement("canvas"), hud = document.createElement("div"), exit = document.createElement("button"), qBtn = document.createElement("button");
     cv.className = "play-canvas lh-canvas"; hud.className = "play-hud";
     exit.className = "play-exit"; exit.type = "button"; exit.innerHTML = "<span aria-hidden=\"true\">✕</span> Exit game";
@@ -887,38 +904,56 @@
     const size = () => { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
     size(); addEventListener("resize", size);
     const GOLD = "#c8aa6e", TEAL = "#0ac8b9", BLUE = "#3d8bff", RED = "#d8443a";
-    const AD = 62, AA_CD = 0.9, Q_DMG = 95, Q_CD = 5, ROUND = 75, WAVE_EVERY = 13;
+    const AA_CD = 0.85, Q_CD = 5, ROUND = 90, RANGE = 280, SPEED = 210;
     const KIND = {
       melee: { hp: 200, dmg: 15, range: 30, rate: 1.1, r: 14, gold: 21 },
       caster: { hp: 130, dmg: 20, range: 150, rate: 1.5, r: 11, gold: 14 },
       cannon: { hp: 420, dmg: 34, range: 190, rate: 2.0, r: 19, gold: 60 },
     };
+    const ITEMS = [[350, "Long Sword", 10], [875, "Pickaxe", 25], [1300, "B. F. Sword", 40]];
     const bestKey = "lasthit-best", best = () => +(store(() => localStorage.getItem(bestKey)) || 0);
-    let units, shots, fx, coins, cs, gold, missed, streak, bestStreak, wave, nextWave, time, over, aaReady, qReady, shake, aim, raf;
+    const laneY = () => H * 0.56, base = () => ({ x: Math.max(60, W * 0.1), y: laneY() + 40 });
+    let units, shots, fx, coins, banners, me, cs, gold, missed, streak, bestStreak, wave, nextWave, time, over, qReady, shake, aim, items, turrets, raf;
     const reset = () => {
-      units = []; shots = []; fx = []; coins = [];
-      cs = gold = missed = streak = bestStreak = wave = 0; nextWave = 0.5; time = 0; over = false; aaReady = 0; qReady = 0; shake = 0;
-      aim = { x: W * 0.7, y: H * 0.55 };
+      units = []; shots = []; fx = []; coins = []; banners = [];
+      cs = gold = missed = streak = bestStreak = wave = 0; nextWave = 2.2; time = 0; over = false; qReady = 0; shake = 0; items = 0;
+      const b = base();
+      me = { team: "blue", champ: true, x: b.x + 60, y: b.y, tx: b.x + 60, ty: b.y, r: 17, hp: 520, max: 520, ad: 58, lvl: 1, xp: 0, aa: 0, order: null, dead: 0, flash: 0, hurt: 0 };
+      turrets = [{ team: "blue", x: W * 0.035, y: laneY() - 40, cd: 0, range: 240 }, { team: "red", x: W * 0.965, y: laneY() - 40, cd: 0, range: 240 }];
+      aim = { x: W * 0.7, y: laneY() };
+      banner("Welcome to Summoner's Rift", 2);
     };
-    reset();
-    const laneY = () => H * 0.56, champ = () => ({ x: Math.max(70, W * 0.16), y: laneY() + 70 }), range = () => Math.max(260, W * 0.7);
+    const banner = (txt, dur = 1.8, col = "#f0e6d2") => banners.push({ txt, col, life: dur, max: dur });
+    const pop = (x, y, txt, col, size = 15) => fx.push({ x, y, txt, col, size, life: 1 });
     const spawn = team => {
       const kinds = ["melee", "melee", "melee", "caster", "caster", "caster"];
       if (wave % 3 === 0) kinds.splice(3, 0, "cannon");
       kinds.forEach((k, i) => {
         const K = KIND[k], dir = team === "blue" ? 1 : -1;
         units.push({ team, k, ...K, max: K.hp, cd: Math.random() * 0.5, x: (team === "blue" ? W * 0.07 : W * 0.93) - dir * i * 26,
-          y: laneY() + ((i % 3) - 1) * 40 + (Math.random() - 0.5) * 10, flash: 0, wave });
+          y: laneY() + ((i % 3) - 1) * 40 + (Math.random() - 0.5) * 10, flash: 0, lunge: 0 });
       });
     };
-    const pop = (x, y, txt, col, size = 15) => fx.push({ x, y, txt, col, size, life: 1 });
-    const enemies = u => units.filter(o => o.team !== u.team && !o.dead);
-    // a red minion dies: gold if your hit landed it, otherwise it's a missed creep
+    const alive = team => units.filter(u => u.team === team && !u.dead);
+    const foesOf = u => (u.team === "red" ? [...alive("blue"), ...(me.dead ? [] : [me])] : alive("red"));
+    const slain = () => {
+      me.dead = 6; me.order = null; streak = 0; shake = 0.5;
+      banner("You have been slain", 2.2, RED);
+      window.sfx.play("boom");
+    };
+    const levelUp = () => {
+      me.lvl++; me.ad += 5; me.max += 40; me.hp = Math.min(me.max, me.hp + 80);
+      pop(me.x, me.y - 46, "LEVEL " + me.lvl, GOLD, 15);
+      fx.push({ ring: true, x: me.x, y: me.y, life: 0.8 });
+      window.sfx.play("chime");
+    };
     const die = (u, byYou) => {
       if (u.dead) return;
       u.dead = true;
       for (let i = 0; i < 10; i++) fx.push({ x: u.x, y: u.y, vx: (Math.random() - 0.5) * 160, vy: (Math.random() - 0.5) * 160, life: 0.7, dot: u.team === "red" ? "#ff8a7a" : "#8ab8ff" });
       if (u.team !== "red" || over) return;
+      // experience for anything that dies near you, gold only for your own last hits
+      if (!me.dead && Math.hypot(u.x - me.x, u.y - me.y) < 420 && me.lvl < 11 && ++me.xp % 5 === 0) levelUp();
       if (byYou) {
         cs++; gold += u.gold; streak++; bestStreak = Math.max(bestStreak, streak);
         pop(u.x, u.y - u.r - 16, "+" + u.gold, GOLD, u.k === "cannon" ? 22 : 16);
@@ -926,44 +961,50 @@
         if (u.k === "cannon") shake = 0.35;
         if (streak >= 3) pop(u.x, u.y - u.r - 36, streak + " in a row", TEAL, 13);
         window.sfx.play("coin");
+        while (items < ITEMS.length && gold >= ITEMS[items][0]) {
+          const [, name, ad] = ITEMS[items++];
+          me.ad += ad;
+          banner(`Bought ${name} · +${ad} attack damage`, 2, GOLD);
+        }
       } else {
         missed++; streak = 0;
         pop(u.x, u.y - u.r - 16, "missed", "#8a8f98", 13);
       }
     };
     const hit = (u, dmg, byYou) => {
+      if (u === me) {
+        if (me.dead || over) return;
+        me.hp -= dmg; me.flash = 0.12; me.hurt = 3;
+        if (me.hp <= 0) slain();
+        return;
+      }
       if (u.dead) return;
       u.hp -= dmg; u.flash = 0.12;
       if (u.hp <= 0) die(u, byYou);
     };
-    const target = (x, y) => units.filter(u => u.team === "red" && !u.dead).map(u => [u, Math.hypot(u.x - x, u.y - y)]).filter(([u, d]) => d < u.r + 24).sort((a, b) => a[1] - b[1])[0]?.[0];
-    const autoAttack = (x, y) => {
+    const minionAt = (x, y) => alive("red").map(u => [u, Math.hypot(u.x - x, u.y - y)]).filter(([u, d]) => d < u.r + 22).sort((a, b) => a[1] - b[1])[0]?.[0];
+    // click: a red minion = attack it (walking into range first); anywhere else in the lane = move there
+    const command = (x, y) => {
       if (over) return reset();
-      const u = target(x, y);
-      if (!u) return;
-      const c = champ();
-      if (Math.hypot(u.x - c.x, u.y - c.y) > range()) return pop(x, y - 20, "out of range", "#8a8f98", 12);
-      if (time < aaReady) return pop(x, y - 20, "attack on cooldown", "#8a8f98", 12);
-      aaReady = time + AA_CD;
-      shots.push({ x: c.x, y: c.y, to: u, speed: 950, dmg: AD, mine: true, col: TEAL, r: 5 });
-      window.sfx.play("blip");
+      if (me.dead) return;
+      const u = minionAt(x, y);
+      if (u) { me.order = u; return; }
+      me.order = null;
+      me.tx = Math.max(20, Math.min(W - 20, x)); me.ty = Math.max(laneY() - 85, Math.min(laneY() + 85, y));
+      fx.push({ move: true, x: me.tx, y: me.ty, life: 0.5 });
     };
-    // Q: a straight bolt toward the pointer (or the weakest minion in reach, on touch); hits the first red minion it meets
     const castQ = () => {
-      if (over || time < qReady) return;
+      if (over || me.dead || time < qReady) return;
       qReady = time + Q_CD;
-      const c = champ();
       let tx = aim.x, ty = aim.y;
-      if (matchMedia("(hover: none)").matches) {
-        const weak = units.filter(u => u.team === "red" && !u.dead).sort((a, b) => a.hp - b.hp)[0];
-        if (weak) { tx = weak.x; ty = weak.y; }
-      }
-      const d = Math.hypot(tx - c.x, ty - c.y) || 1;
-      shots.push({ x: c.x, y: c.y, vx: (tx - c.x) / d, vy: (ty - c.y) / d, speed: 1300, dmg: Q_DMG, mine: true, q: true, col: GOLD, r: 8, left: range() * 1.1 });
+      if (touchUI) { const weak = alive("red").sort((a, b) => a.hp - b.hp)[0]; if (weak) { tx = weak.x; ty = weak.y; } }
+      const d = Math.hypot(tx - me.x, ty - me.y) || 1;
+      shots.push({ x: me.x, y: me.y, vx: (tx - me.x) / d, vy: (ty - me.y) / d, speed: 1300, dmg: Math.round(70 + me.ad * 0.6), mine: true, q: true, col: GOLD, r: 8, left: RANGE * 1.5 });
       window.sfx.play("whoosh");
     };
-    cv.addEventListener("pointerdown", e => autoAttack(e.clientX, e.clientY));
+    cv.addEventListener("pointerdown", e => command(e.clientX, e.clientY));
     cv.addEventListener("pointermove", e => { aim = { x: e.clientX, y: e.clientY }; });
+    cv.addEventListener("contextmenu", e => { e.preventDefault(); command(e.clientX, e.clientY); }); // right-click to move, as in the game
     qBtn.addEventListener("click", castQ);
     const quit = () => {
       cancelAnimationFrame(raf); cv.remove(); hud.remove(); exit.remove(); qBtn.remove(); playing = false; window.lenis?.start();
@@ -972,24 +1013,28 @@
     const onKey = e => { if (e.key === "Escape") quit(); if (e.key === "q" || e.key === "Q") castQ(); };
     exit.addEventListener("click", quit);
     addEventListener("keydown", onKey);
+    reset();
 
     const drawRift = () => {
       const y = laneY();
       g.fillStyle = "#06120d"; g.fillRect(0, 0, W, H);
-      // jungle walls and brush either side of the lane
       g.fillStyle = "#0c2018";
       for (let i = 0; i < 18; i++) { const x = (i / 17) * W; g.beginPath(); g.ellipse(x, y - 150 + Math.sin(i * 2.3) * 12, 70, 36, 0, 0, Math.PI * 2); g.ellipse(x + 40, y + 170 + Math.cos(i * 1.7) * 12, 70, 34, 0, 0, Math.PI * 2); g.fill(); }
       g.fillStyle = "#24342b"; g.fillRect(0, y - 105, W, 210);
       g.fillStyle = "#2c3e33"; g.fillRect(0, y - 88, W, 176);
       g.strokeStyle = "rgba(255,255,255,.03)"; g.lineWidth = 2;
       for (let x = 0; x < W; x += 60) { g.beginPath(); g.moveTo(x, y - 88); g.lineTo(x + 30, y + 88); g.stroke(); }
-      // turrets at each end
-      [[W * 0.03, BLUE], [W * 0.97, RED]].forEach(([x, col]) => {
-        g.fillStyle = "#1a1f26"; g.fillRect(x - 16, y - 70, 32, 70);
-        g.fillStyle = col; g.beginPath(); g.arc(x, y - 78, 12, 0, Math.PI * 2); g.fill();
-        g.globalAlpha = 0.25 + Math.sin(time * 3) * 0.1; g.beginPath(); g.arc(x, y - 78, 22, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+      turrets.forEach(tw => {
+        const col = tw.team === "blue" ? BLUE : RED;
+        if (tw.team === "red" && !me.dead && Math.hypot(me.x - tw.x, me.y - tw.y - 40) < tw.range + 60) { // only when you're close enough to be shot
+          g.strokeStyle = "rgba(216,68,58,.5)"; g.lineWidth = 2; g.beginPath(); g.arc(tw.x, tw.y + 40, tw.range, 0, Math.PI * 2); g.stroke();
+        }
+        g.fillStyle = "#1a1f26"; g.fillRect(tw.x - 16, tw.y - 30, 32, 70);
+        g.fillStyle = col; g.beginPath(); g.arc(tw.x, tw.y - 38, 12, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 0.25 + Math.sin(time * 3) * 0.1; g.beginPath(); g.arc(tw.x, tw.y - 38, 22, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       });
     };
+    const bar = (x, y, w, frac, col) => { g.fillStyle = "#000"; g.fillRect(x - 1, y - 1, w + 2, 7); g.fillStyle = col; g.fillRect(x, y, w * Math.max(0, frac), 5); };
     const drawUnit = u => {
       const col = u.team === "blue" ? BLUE : RED;
       g.save(); g.translate(u.x + (u.lunge || 0) * 7 * (u.team === "blue" ? 1 : -1), u.y);
@@ -1001,21 +1046,33 @@
       else g.arc(0, 0, u.r, 0, Math.PI * 2);
       g.fill(); g.stroke();
       g.restore();
-      // health bar; red ones get your damage marked, and turn white when one auto attack finishes them
-      const w = u.r * 2.8, bx = u.x - w / 2, by = u.y - u.r - 13, killable = u.team === "red" && u.hp <= AD;
-      g.fillStyle = "#000"; g.fillRect(bx - 1, by - 1, w + 2, 7);
-      g.fillStyle = killable ? "#ffffff" : col; g.fillRect(bx, by, w * Math.max(0, u.hp / u.max), 5);
-      if (u.team === "red") { g.fillStyle = GOLD; g.fillRect(bx + w * Math.min(1, AD / u.max), by - 2, 1.5, 9); }
+      const w = u.r * 2.8, bx = u.x - w / 2, by = u.y - u.r - 13, killable = u.team === "red" && u.hp <= me.ad;
+      bar(bx, by, w, u.hp / u.max, killable ? "#fff" : col);
+      if (u.team === "red") { g.fillStyle = GOLD; g.fillRect(bx + w * Math.min(1, me.ad / u.max), by - 2, 1.5, 9); }
       if (killable) { g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 1.5; g.beginPath(); g.arc(u.x, u.y, u.r + 6 + Math.sin(time * 12) * 1.5, 0, Math.PI * 2); g.stroke(); }
+      if (me.order === u) { g.strokeStyle = TEAL; g.lineWidth = 2; g.beginPath(); g.arc(u.x, u.y, u.r + 10, 0, Math.PI * 2); g.stroke(); }
     };
+    // your champion: a hooded mage with a glowing orb, a health bar and a level badge
     const drawChamp = () => {
-      const c = champ();
-      g.fillStyle = "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 2.5;
-      g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + (i * Math.PI) / 3; g[i ? "lineTo" : "moveTo"](c.x + Math.cos(a) * 22, c.y + Math.sin(a) * 22); } g.closePath(); g.fill(); g.stroke();
-      g.fillStyle = GOLD; g.font = "700 16px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("✦", c.x, c.y + 1);
-      const aa = Math.max(0, aaReady - time) / AA_CD;
-      g.strokeStyle = TEAL; g.lineWidth = 3; g.beginPath(); g.arc(c.x, c.y, 29, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - aa)); g.stroke();
-      g.textBaseline = "alphabetic";
+      if (me.dead) {
+        const b = base();
+        g.fillStyle = "rgba(216,68,58,.8)"; g.font = "700 14px system-ui, sans-serif"; g.textAlign = "center";
+        g.fillText(`Respawning in ${Math.ceil(me.dead)}`, b.x + 60, b.y);
+        return;
+      }
+      const bob = Math.sin(time * 4) * 1.5;
+      g.save(); g.translate(me.x, me.y + bob);
+      g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(0, 18 - bob, 16, 5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = me.flash > 0 ? "#fff" : "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(0, -22); g.lineTo(14, 16); g.lineTo(-14, 16); g.closePath(); g.fill(); g.stroke(); // cloak
+      g.fillStyle = "#e0b48a"; g.beginPath(); g.arc(0, -8, 5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = TEAL; g.shadowColor = TEAL; g.shadowBlur = 14; g.beginPath(); g.arc(13, -6, 4.5, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+      g.restore();
+      const aa = Math.max(0, me.aa - time) / AA_CD;
+      g.strokeStyle = TEAL; g.lineWidth = 2.5; g.beginPath(); g.arc(me.x, me.y, 27, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - aa)); g.stroke();
+      bar(me.x - 26, me.y - 40, 52, me.hp / me.max, me.hp / me.max < 0.3 ? RED : "#3fbf3f");
+      g.fillStyle = "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 1.5; g.beginPath(); g.arc(me.x - 34, me.y - 37, 8, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = "#f0e6d2"; g.font = "700 9px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(me.lvl, me.x - 34, me.y - 36.5); g.textBaseline = "alphabetic";
     };
 
     let last = performance.now();
@@ -1030,14 +1087,31 @@
         if (cs >= 15) collect("blaster"); // fragment id kept from the old asteroid game so saved progress still counts
         window.sfx.play(cs >= 15 ? "ok" : "close");
       }
-      if (!over && time >= nextWave) { wave++; spawn("blue"); spawn("red"); nextWave = time + Math.max(9, WAVE_EVERY - wave * 0.4); }
-      // minions: walk until something hostile is in range, then trade hits. Casters and cannons throw projectiles
+      if (!over && time >= nextWave) { wave++; spawn("blue"); spawn("red"); nextWave = time + Math.max(9, 13 - wave * 0.4); if (wave === 1) banner("Minions have spawned", 1.8); }
+      // you: respawn, regenerate out of combat, walk to orders, attack your target when it's in range
+      if (me.dead) { me.dead -= dt; if (me.dead <= 0) { const b = base(); Object.assign(me, { dead: 0, hp: me.max, x: b.x, y: b.y, tx: b.x + 60, ty: b.y }); } }
+      else if (!over) {
+        me.flash = Math.max(0, me.flash - dt); me.hurt = Math.max(0, me.hurt - dt);
+        if (!me.hurt) me.hp = Math.min(me.max, me.hp + 14 * dt);
+        if (me.order && me.order.dead) me.order = null;
+        let gx = me.tx, gy = me.ty;
+        if (me.order) {
+          const d = Math.hypot(me.order.x - me.x, me.order.y - me.y);
+          if (d <= RANGE) {
+            gx = me.x; gy = me.y;
+            if (time >= me.aa) { me.aa = time + AA_CD; shots.push({ x: me.x + 13, y: me.y - 6, to: me.order, speed: 950, dmg: me.ad, mine: true, col: TEAL, r: 5 }); window.sfx.play("blip"); me.order = null; }
+          } else { gx = me.order.x; gy = me.order.y; }
+          me.tx = gx; me.ty = gy;
+        }
+        const d = Math.hypot(gx - me.x, gy - me.y);
+        if (d > 2) { const st = Math.min(d, SPEED * dt); me.x += ((gx - me.x) / d) * st; me.y += ((gy - me.y) / d) * st; }
+      }
+      // minions: walk until something hostile is in range, then trade hits. Red ones will hit you if you're the closest target
       units.forEach(u => {
         if (u.dead) return;
-        u.flash = Math.max(0, u.flash - dt); u.lunge = Math.max(0, (u.lunge || 0) - dt * 6);
-        const foes = enemies(u);
+        u.flash = Math.max(0, u.flash - dt); u.lunge = Math.max(0, u.lunge - dt * 6);
         let foe = null, fd = Infinity;
-        foes.forEach(o => { const d = Math.hypot(o.x - u.x, o.y - u.y); if (d < fd) { fd = d; foe = o; } });
+        foesOf(u).forEach(o => { const d = Math.hypot(o.x - u.x, o.y - u.y); if (d < fd) { fd = d; foe = o; } });
         if (foe && fd <= u.range + u.r + foe.r) {
           u.cd -= dt;
           if (u.cd <= 0 && !over) {
@@ -1046,12 +1120,23 @@
             else shots.push({ x: u.x, y: u.y, to: foe, speed: 520, dmg: u.dmg, mine: false, col: u.team === "blue" ? "#8ab8ff" : "#ff9a8a", r: u.k === "cannon" ? 5 : 3 });
           }
         } else if (!over) {
-          const tx = foe && fd < 260 ? foe.x : u.team === "blue" ? W + 60 : -60, ty = foe && fd < 260 ? foe.y : u.y;
+          const chase = foe && fd < 260 && !foe.champ;
+          const tx = chase ? foe.x : u.team === "blue" ? W + 60 : -60, ty = chase ? foe.y : u.y;
           const d = Math.hypot(tx - u.x, ty - u.y) || 1;
           u.x += ((tx - u.x) / d) * 150 * dt; u.y += ((ty - u.y) / d) * 50 * dt;
         }
       });
-      // keep allies from stacking: overlapping teammates push apart (mostly sideways, so the line spreads out)
+      // turrets: hit the nearest enemy in range, minions first; they hurt
+      turrets.forEach(tw => {
+        tw.cd -= dt;
+        if (tw.cd > 0 || over) return;
+        const pool = tw.team === "red" ? alive("blue") : alive("red");
+        let tgt = pool.filter(u => Math.hypot(u.x - tw.x, u.y - tw.y - 40) < tw.range).sort((a, b) => Math.hypot(a.x - tw.x, a.y - tw.y) - Math.hypot(b.x - tw.x, b.y - tw.y))[0];
+        if (!tgt && tw.team === "red" && !me.dead && Math.hypot(me.x - tw.x, me.y - tw.y - 40) < tw.range) tgt = me;
+        if (!tgt) return;
+        tw.cd = 1.2;
+        shots.push({ x: tw.x, y: tw.y - 38, to: tgt, speed: 700, dmg: tgt === me ? 110 : 70, mine: false, col: tw.team === "blue" ? "#bcd6ff" : "#ffb4a8", r: 6 });
+      });
       for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) {
         const a = units[i], b = units[j];
         if (a.dead || b.dead || a.team !== b.team) continue;
@@ -1062,17 +1147,16 @@
       }
       units.forEach(u => { u.y = Math.max(laneY() - 80, Math.min(laneY() + 80, u.y)); });
       units = units.filter(u => !u.dead && u.x > -80 && u.x < W + 80);
-      // projectiles
       shots.forEach(s => {
         if (s.q) {
           const step = s.speed * dt;
           s.x += s.vx * step; s.y += s.vy * step; s.left -= step;
-          const h = units.find(u => u.team === "red" && !u.dead && Math.hypot(u.x - s.x, u.y - s.y) < u.r + s.r);
+          const h = alive("red").find(u => Math.hypot(u.x - s.x, u.y - s.y) < u.r + s.r);
           if (h) { hit(h, s.dmg, true); s.done = true; pop(h.x, h.y - h.r - 30, String(s.dmg), GOLD, 13); }
           if (s.left <= 0) s.done = true;
           return;
         }
-        if (s.to.dead) { s.done = true; return; }
+        if (s.to.dead || (s.to === me && me.dead)) { s.done = true; return; }
         const dx = s.to.x - s.x, dy = s.to.y - s.y, d = Math.hypot(dx, dy), step = s.speed * dt;
         if (d <= step) { s.done = true; hit(s.to, s.dmg, s.mine); return; }
         s.x += (dx / d) * step; s.y += (dy / d) * step;
@@ -1083,29 +1167,29 @@
       g.save();
       if (shake) g.translate((Math.random() - 0.5) * 10 * shake, (Math.random() - 0.5) * 10 * shake);
       drawRift();
-      units.slice().sort((a, b) => a.y - b.y).forEach(drawUnit);
-      drawChamp();
+      [...units, me].filter(u => !u.dead || u === me).sort((a, b) => a.y - b.y).forEach(u => (u === me ? drawChamp() : drawUnit(u)));
       shots.forEach(s => {
         g.fillStyle = s.col; g.shadowColor = s.col; g.shadowBlur = s.mine ? 14 : 4;
         g.beginPath(); g.arc(s.x, s.y, s.r, 0, Math.PI * 2); g.fill();
         if (s.q) { g.globalAlpha = 0.4; g.beginPath(); g.arc(s.x - s.vx * 14, s.y - s.vy * 14, s.r * 0.7, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
       });
       g.shadowBlur = 0;
-      // Q aim line on desktop while it's ready
-      if (!over && time >= qReady && !matchMedia("(hover: none)").matches) {
-        const c = champ(), d = Math.hypot(aim.x - c.x, aim.y - c.y) || 1, L = range() * 1.1;
-        g.strokeStyle = "rgba(200,170,110,.18)"; g.lineWidth = 16; g.lineCap = "round";
-        g.beginPath(); g.moveTo(c.x, c.y); g.lineTo(c.x + ((aim.x - c.x) / d) * L, c.y + ((aim.y - c.y) / d) * L); g.stroke(); g.lineCap = "butt";
+      if (!over && !me.dead && time >= qReady && !touchUI) {
+        const d = Math.hypot(aim.x - me.x, aim.y - me.y) || 1, L = RANGE * 1.5;
+        g.strokeStyle = "rgba(200,170,110,.16)"; g.lineWidth = 16; g.lineCap = "round";
+        g.beginPath(); g.moveTo(me.x, me.y); g.lineTo(me.x + ((aim.x - me.x) / d) * L, me.y + ((aim.y - me.y) / d) * L); g.stroke(); g.lineCap = "butt";
       }
+      if (!me.dead && !touchUI) { g.strokeStyle = "rgba(10,200,185,.07)"; g.lineWidth = 1; g.beginPath(); g.arc(me.x, me.y, RANGE, 0, Math.PI * 2); g.stroke(); }
       fx.forEach(f => {
-        f.life -= dt * (f.dot ? 1.6 : 1);
+        f.life -= dt * (f.dot ? 1.6 : f.move ? 2 : 1);
         g.globalAlpha = Math.max(0, f.life);
         if (f.dot) { f.x += f.vx * dt; f.y += f.vy * dt; g.fillStyle = f.dot; g.fillRect(f.x, f.y, 3, 3); }
+        else if (f.move) { g.strokeStyle = "#3fbf3f"; g.lineWidth = 2; g.beginPath(); g.ellipse(f.x, f.y, 14 * f.life + 4, 6 * f.life + 2, 0, 0, Math.PI * 2); g.stroke(); }
+        else if (f.ring) { g.strokeStyle = GOLD; g.lineWidth = 3; g.beginPath(); g.arc(f.x, f.y, 30 + (1 - f.life) * 60, 0, Math.PI * 2); g.stroke(); }
         else { f.y -= 34 * dt; g.fillStyle = f.col; g.font = `700 ${f.size}px system-ui, sans-serif`; g.textAlign = "center"; g.fillText(f.txt, f.x, f.y); }
       });
       g.globalAlpha = 1;
       fx = fx.filter(f => f.life > 0);
-      // gold coins fly up to the score
       coins.forEach(k => {
         k.t += dt;
         if (k.t < 0) return;
@@ -1116,20 +1200,31 @@
         if (p >= 1) k.done = true;
       });
       coins = coins.filter(k => !k.done);
+      // announcer banners, one at a time
+      const b = banners[0];
+      if (b) {
+        b.life -= dt;
+        const a = Math.min(1, b.life * 2, (b.max - b.life) * 4);
+        g.globalAlpha = Math.max(0, a);
+        g.fillStyle = "rgba(1,10,19,.75)"; g.fillRect(W / 2 - 220, laneY() - 170, 440, 44);
+        g.strokeStyle = GOLD; g.lineWidth = 1; g.strokeRect(W / 2 - 220, laneY() - 170, 440, 44);
+        g.fillStyle = b.col; g.font = "600 18px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+        g.fillText(b.txt, W / 2, laneY() - 148); g.textBaseline = "alphabetic"; g.globalAlpha = 1;
+        if (b.life <= 0) banners.shift();
+      }
       g.restore();
 
       const qLeft = Math.max(0, qReady - time);
-      qBtn.classList.toggle("cd", qLeft > 0);
+      qBtn.classList.toggle("cd", qLeft > 0 || me.dead);
       qBtn.style.setProperty("--cd", qLeft / Q_CD);
       const total = cs + missed, pct = total ? Math.round((cs / total) * 100) : 0;
       const grade = pct >= 90 ? "S" : pct >= 75 ? "A" : pct >= 55 ? "B" : pct >= 35 ? "C" : "D";
       const mm = Math.floor(left / 60), ss = String(Math.floor(left % 60)).padStart(2, "0");
       hud.innerHTML = over
-        ? `<b>${grade}</b> ${cs} CS · ${pct}% of the wave · ${gold} gold · best streak ${bestStreak} · best ${Math.max(best(), cs)}<span>Click to queue again</span>`
-        : `<b>${cs}</b> CS · ${gold} gold · ${pct}% · ${mm}:${ss}${streak >= 3 ? ` · ${streak} streak` : ""} · best ${best()}<span>Hit a red minion when its bar turns white · ${matchMedia("(hover: none)").matches ? "tap Q" : "Q"} for a skillshot</span>`;
+        ? `<b>${grade}</b> ${cs} CS · ${pct}% of the wave · ${gold} gold · level ${me.lvl} · best streak ${bestStreak} · best ${Math.max(best(), cs)}<span>Click to queue again</span>`
+        : `<b>${cs}</b> CS · ${gold} gold · ${pct}% · Lv ${me.lvl} · AD ${me.ad} · ${mm}:${ss} · best ${best()}<span>${touchUI ? "Tap the lane to move, tap a red minion to attack, tap Q" : "Click the lane to move, click a red minion to attack, Q to cast"} · strike when its bar turns white</span>`;
     };
     raf = requestAnimationFrame(frame);
-    toast("Last hit: your minions fight theirs. Take the killing blow for gold. 15 CS earns a star fragment.");
   };
 
   // ---------- star fragments: one hidden on each planet page, plus two earned by playing ----------
@@ -1399,7 +1494,36 @@
     cv.width = VW * dpr; cv.height = VH * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const msg = $(".pk-msg", o.fx), [usMarks, themMarks] = $$(".pk-marks", o.fx), score = $(".pk-board strong", o.fx);
     const GOAL = { l: 190, r: 530, top: 172, line: 300 }, SPOT = { x: 360, y: 412 };
-    const crowd = Array.from({ length: 700 }, () => ({ x: Math.random() * VW, y: 8 + Math.random() * 96, c: ["#da291c", "#da291c", "#fff", "#111", "#fbe122"][Math.random() * 5 | 0], p: Math.random() * 6 }));
+    // the Stretford End, painted once: cantilever roof and floodlights, two tiers of faces in red and white
+    // either side of the red fascia. Flags, camera flashes and the celebration jump are drawn over it each frame
+    const stand = document.createElement("canvas");
+    stand.width = VW * dpr; stand.height = 112 * dpr;
+    {
+      const s2 = stand.getContext("2d");
+      s2.scale(dpr, dpr);
+      s2.fillStyle = "#0d0e12"; s2.fillRect(0, 0, VW, 112);
+      [[90, 4], [630, 4]].forEach(([x, y]) => { const gr = s2.createRadialGradient(x, y, 0, x, y, 70); gr.addColorStop(0, "rgba(255,255,240,.55)"); gr.addColorStop(1, "rgba(255,255,240,0)"); s2.fillStyle = gr; s2.fillRect(x - 70, 0, 140, 60); });
+      s2.fillStyle = "#24262d"; s2.fillRect(0, 0, VW, 11);
+      s2.strokeStyle = "rgba(255,255,255,.55)"; s2.lineWidth = 1; s2.beginPath();
+      for (let x = 0; x <= VW; x += 24) { s2.moveTo(x, 11); s2.lineTo(x + 12, 3); s2.lineTo(x + 24, 11); }
+      s2.moveTo(0, 11); s2.lineTo(VW, 11); s2.stroke();
+      const SKIN = ["#f1c7a0", "#e0b48a", "#c68a5a", "#8d5a3a"], SHIRT = ["#da291c", "#da291c", "#da291c", "#fff", "#111", "#fbe122"];
+      const tier = (y0, y1) => {
+        s2.fillStyle = "#7d130d"; s2.fillRect(0, y0, VW, y1 - y0);
+        for (let y = y0 + 3; y < y1 - 2; y += 6.4) for (let x = 2 + ((y * 7) % 5); x < VW; x += 5.6) {
+          if (Math.random() < 0.04) continue; // the odd empty seat
+          s2.fillStyle = SHIRT[Math.random() * SHIRT.length | 0]; s2.fillRect(x - 2.2, y + 1.4, 4.4, 3);
+          s2.fillStyle = SKIN[Math.random() * SKIN.length | 0]; s2.beginPath(); s2.arc(x, y, 1.8, 0, Math.PI * 2); s2.fill();
+        }
+      };
+      tier(13, 56); tier(70, 110);
+      s2.fillStyle = "#c8102e"; s2.fillRect(0, 56, VW, 14);
+      s2.fillStyle = "#fff"; s2.font = "800 11px system-ui, sans-serif"; s2.textAlign = "center"; s2.textBaseline = "middle";
+      s2.fillText("S T R E T F O R D   E N D", VW / 2, 63.5);
+      s2.font = "700 8px system-ui, sans-serif"; s2.fillText("MANCHESTER UNITED", 110, 63.5); s2.fillText("MANCHESTER UNITED", VW - 110, 63.5);
+    }
+    const FLAGS = [[60, 30, "#da291c"], [170, 88, "#fff"], [270, 24, "#111"], [450, 92, "#fbe122"], [560, 34, "#fff"], [665, 86, "#da291c"]];
+    let flashes = [], jump = 0;
     let us = [], them = [], phase = "aim", t = 0, aim = { x: 360, y: 230 }, charging = false, power = 0, shot = null, keeper = null, dive = null, confetti = [], raf;
 
     const say = txt => { msg.textContent = txt; };
@@ -1425,6 +1549,7 @@
         phase = "end";
         if (v === "win") {
           say("UNITED WIN! Glory Glory Man United! Tap the pitch to go again.");
+          jump = 4;
           window.sfx.play("crowd"); window.sfx.play("ok");
           for (let i = 0; i < 160; i++) confetti.push({ x: Math.random() * VW, y: -Math.random() * 200, vx: (Math.random() - 0.5) * 60, vy: 80 + Math.random() * 120, c: ["#da291c", "#fff", "#fbe122", "#111"][i % 4], r: Math.random() * 6 });
         } else { say("Heartbreak at Old Trafford. Tap the pitch to go again."); window.sfx.play("close"); }
@@ -1490,21 +1615,33 @@
       s.result = scored ? "goal" : saved ? "saved" : "miss";
       (s.mine ? us : them).push(scored);
       if (s.mine) {
-        if (scored) { say("GOAL! Glory Glory Man United!"); window.sfx.play("crowd"); window.sfx.play("coin"); }
+        if (scored) { say("GOAL! Glory Glory Man United!"); window.sfx.play("crowd"); window.sfx.play("coin"); jump = 1.8; }
         else say(saved ? "Saved! He guessed right." : over ? "Over the bar. Too much power." : "Wide. So close.");
         if (!scored) window.sfx.play(saved ? "thud" : "close");
       } else {
         if (scored) { say("They score. Your kick next."); window.sfx.play("close"); }
-        else { say(saved ? "WHAT A SAVE!" : "They've missed it!"); window.sfx.play(saved ? "thud" : "crowd"); if (saved) window.sfx.play("crowd"); }
+        else { jump = 1.4; say(saved ? "WHAT A SAVE!" : "They've missed it!"); window.sfx.play(saved ? "thud" : "crowd"); if (saved) window.sfx.play("crowd"); }
       }
       phase = "result"; t = 0;
     };
 
     const draw = dt => {
-      // stands: the Stretford End, a flickering red sea
-      g.fillStyle = "#14090a"; g.fillRect(0, 0, VW, 112);
-      crowd.forEach(c => { g.globalAlpha = 0.55 + Math.sin(c.p + performance.now() / 400) * 0.25; g.fillStyle = c.c; g.fillRect(c.x, c.y, 3, 3); });
-      g.globalAlpha = 0.18; g.fillStyle = "#fff"; g.font = "700 26px system-ui, sans-serif"; g.textAlign = "center"; g.fillText("STRETFORD END", VW / 2, 62); g.globalAlpha = 1;
+      // the Stretford End: bounces when United score, flags wave, phones flash
+      jump = Math.max(0, jump - dt);
+      const hop = jump ? -Math.abs(Math.sin(performance.now() / 90)) * 3 : 0;
+      g.drawImage(stand, 0, hop, VW, 112);
+      FLAGS.forEach(([x, y, col], i) => {
+        const w = performance.now() / 260 + i;
+        g.strokeStyle = "#ddd"; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y + 14 + hop); g.lineTo(x, y - 10 + hop); g.stroke();
+        g.fillStyle = col; g.beginPath(); g.moveTo(x, y - 10 + hop);
+        for (let k = 0; k <= 4; k++) g.lineTo(x + k * 5, y - 10 + hop + Math.sin(w + k * 0.9) * 2.5);
+        for (let k = 4; k >= 0; k--) g.lineTo(x + k * 5, y - 2 + hop + Math.sin(w + k * 0.9) * 2.5);
+        g.closePath(); g.fill();
+      });
+      if (Math.random() < (jump ? 0.6 : 0.08)) flashes.push({ x: Math.random() * VW, y: 14 + Math.random() * 94, life: 1 });
+      flashes.forEach(f => { f.life -= dt * 5; g.globalAlpha = Math.max(0, f.life); g.fillStyle = "#fff"; g.beginPath(); g.arc(f.x, f.y, 1.6, 0, Math.PI * 2); g.fill(); });
+      g.globalAlpha = 1;
+      flashes = flashes.filter(f => f.life > 0);
       // LED board
       g.fillStyle = "#120303"; g.fillRect(0, 112, VW, 22);
       g.fillStyle = "#ff3b2f"; g.font = "600 13px ui-monospace, monospace"; g.textAlign = "left";
@@ -1535,15 +1672,22 @@
       g.fillStyle = "#f2f2f2"; g.beginPath(); g.arc(-31, -86 + kp.p * 10, 6, 0, Math.PI * 2); g.arc(31, -86 + kp.p * 10, 6, 0, Math.PI * 2); g.fill();
       g.fillStyle = "#e0b48a"; g.beginPath(); g.arc(0, -76, 10, 0, Math.PI * 2); g.fill();
       g.restore();
-      // the taker in red, number 7
-      if (phase === "aim" || (shot && shot.mine && phase !== "save")) {
-        g.save(); g.translate(SPOT.x - 34, 446);
-        g.fillStyle = "#fff"; g.fillRect(-9, -26, 8, 24); g.fillRect(2, -26, 8, 24);
-        g.fillStyle = "#da291c"; g.fillRect(-13, -64, 26, 40);
-        g.fillStyle = "#fff"; g.font = "800 18px system-ui, sans-serif"; g.textAlign = "center"; g.fillText("7", 0, -38);
-        g.fillStyle = "#3a2516"; g.beginPath(); g.arc(0, -72, 9, 0, Math.PI * 2); g.fill();
-        g.restore();
-      }
+      // the referee on the line, whistle ready
+      g.save(); g.translate(600, GOAL.line + 4);
+      g.fillStyle = "#111"; g.fillRect(-5, -22, 4, 22); g.fillRect(1, -22, 4, 22); g.fillRect(-8, -48, 16, 28);
+      g.fillStyle = "#e0b48a"; g.beginPath(); g.arc(0, -54, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fbe122"; g.fillRect(-8, -44, 16, 3);
+      g.restore();
+      // the taker: United's number 7 in red, or their number 9 in navy, stepping in on the run-up
+      const ours = phase === "aim" || phase === "end" || (shot && shot.mine && phase !== "save");
+      const runup = phase === "save" ? Math.min(1, t / 1.6) : 1, struck = phase === "flight" || phase === "result";
+      g.save(); g.translate(SPOT.x - 34 - (1 - runup) * 70 + (struck ? 14 : 0), 446 + (1 - runup) * 20);
+      g.fillStyle = ours ? "#fff" : "#1c2c5b"; g.fillRect(-9, -26, 8, 24); g.fillRect(2, -26, 8, 24);
+      g.fillStyle = ours ? "#da291c" : "#1c2c5b"; g.fillRect(-13, -64, 26, 40);
+      if (!ours) { g.fillStyle = "#87b6e8"; g.fillRect(-13, -64, 26, 6); }
+      g.fillStyle = "#fff"; g.font = "800 18px system-ui, sans-serif"; g.textAlign = "center"; g.fillText(ours ? "7" : "9", 0, -38);
+      g.fillStyle = ours ? "#3a2516" : "#c68a5a"; g.beginPath(); g.arc(0, -72, 9, 0, Math.PI * 2); g.fill();
+      g.restore();
       // ball: arcs toward its target, shrinking with distance
       let bx = SPOT.x, by = SPOT.y, bs = 1;
       if (shot && (phase === "flight" || phase === "result")) {
