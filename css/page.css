@@ -3136,3 +3136,27 @@ body.menu-open .planet-menu a { transform: none; opacity: 1; }
   .proj-grid li.wide .proj-thumb { flex: 1.3; aspect-ratio: auto; min-height: 260px; border-bottom: 0; border-right: 1px solid var(--line); }
   .proj-grid li.wide .proj-body { flex: 1; justify-content: center; }
 }
+
+.lander-play {
+  display: block;
+  margin: 2.4rem auto -1.4rem;
+  padding: .7rem 1.4rem;
+  position: relative;
+  z-index: 2;
+  border: 1px solid var(--planet);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .6);
+  color: var(--planet);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: .8rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--planet) 25%, transparent);
+  transition: background .3s, color .3s, transform .3s var(--ease);
+}
+
+.lander-play:hover { background: var(--planet); color: #000; transform: translateY(-2px); }
+.lander-play[hidden] { display: none; }
+.ascii { touch-action: manipulation; }

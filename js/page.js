@@ -352,7 +352,7 @@
       dust.forEach(d => { d.x += d.vx; put(SURF - 1, Math.round(d.x), d.life > 6 ? "°" : "·", "p"); });
       if (!game) {
         if (Math.sin(t * 0.004) > 0) put(SURF - LANDER.length - 1, lx + 3, "*", "fl"); // beacon
-        centre(0, best() ? `[ click to fly the lander · best ${best()} ]` : "[ click to fly the lander ]");
+        if (best()) centre(0, `best score ${best()}`);
       } else {
         const wind = game.wind ? `${game.wind < 0 ? "←" : "→"}${Math.abs(game.wind * 1000).toFixed(1)}` : "calm";
         const fuel = String(Math.max(0, game.fuel | 0)).padStart(3);
@@ -363,7 +363,7 @@
         const gw = Math.min(20, cols - 4), on = Math.round(gw * Math.max(0, game.fuel) / game.tank);
         text(1, "▕" + "█".repeat(on) + "░".repeat(gw - on) + "▏", 1, game.fuel < game.tank * 0.2 ? "w" : "t");
         if (game.over === "land") centre(3, game.msg);
-        if (game.over === "crash") { centre(3, game.msg, "w"); centre(4, "[ click to try again ]"); }
+        if (game.over === "crash") { centre(3, game.msg, "w"); centre(4, "click the art or Try again"); }
       }
       // one span per run of the same layer keeps the DOM small
       ascii.innerHTML = grid.map(row => {
@@ -373,6 +373,8 @@
       }).join("\n");
       ascii.classList.toggle("playing", !!game);
       ui.hidden = !game;
+      play.hidden = !canStart();
+      play.textContent = game?.over === "crash" ? "↻ Try again" : "▶ Fly the lander";
     };
     const step = () => {
       const g = game;
@@ -425,7 +427,9 @@
       terrain();
       launch();
       wake();
-      ascii.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+      held = false;
+      const y = ascii.getBoundingClientRect().top + scrollY - innerHeight / 2 + ascii.offsetHeight / 2;
+      window.lenis ? window.lenis.scrollTo(y, { duration: 0.8 }) : scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
     };
     // on-screen controls: exit, and ◀ ▲ ▶ for phones
     const ui = document.createElement("div");
@@ -441,8 +445,17 @@
       ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, off));
       b.addEventListener("contextmenu", e => e.preventDefault());
     });
-    ascii.addEventListener("click", () => { if (!game) startLander(); else if (game.over === "crash") startLander(); });
-    ascii.addEventListener("pointerdown", () => (held = true));
+    // start on press, not click: the art is re-rendered every frame, so the node under the cursor at
+    // mousedown is usually gone by mouseup and the browser never fires "click"
+    const canStart = () => !game || game.over === "crash";
+    const play = document.createElement("button");
+    play.type = "button"; play.className = "lander-play";
+    play.addEventListener("click", () => canStart() && startLander());
+    ascii.before(play);
+    ascii.addEventListener("pointerdown", e => {
+      if (canStart()) { e.preventDefault(); startLander(); return; }
+      held = true;
+    });
     addEventListener("pointerup", () => (held = false));
     const KEYS = { ArrowUp: "up", " ": "up", w: "up", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
     addEventListener("keydown", e => { if (game && !game.over && KEYS[e.key] && !e.target.closest("input,textarea")) { keys[KEYS[e.key]] = true; e.preventDefault(); } });
