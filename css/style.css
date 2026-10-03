@@ -239,7 +239,10 @@
 .og-mode .planet-panel,
 .og-mode .dots,
 .og-mode .readout,
-.og-mode .welcome .lede {
+.og-mode .welcome .lede,
+.og-mode .sound-prompt,
+.og-mode .audio-btn,
+.og-mode .scroll-cue {
   display: none;
 }
 
