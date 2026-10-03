@@ -1193,17 +1193,19 @@ p {
   }
 
   /* one pinned frame: every project's figure sits in the same sticky slot, and scrolling cross-fades between them */
+  /* every slide shares one tall grid cell, so each sticks for the whole track and stops exactly at its end */
   .showcase-media {
-    display: block;
+    display: grid;
+    grid-template-rows: calc(4 * 80vh + 20vh);
     padding: 0;
-    height: calc(4 * 80vh + 20vh);
   }
 
   .showcase-media > div {
+    grid-area: 1 / 1;
+    align-self: start;
     position: sticky;
     top: 0;
     height: 100vh;
-    margin-bottom: -100vh;
     display: flex;
     align-items: center;
     pointer-events: none;
@@ -3571,7 +3573,7 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
   position: absolute;
   left: 12%;
   right: 12%;
-  top: 18px;
+  top: 40px;
   height: 130px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3608,9 +3610,9 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
 .pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-80px) rotate(-70deg); }
 .pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(80px) rotate(70deg); }
 .pk-pitch.shot[data-dive="1"] .pk-keeper { transform: translateY(-14px); }
-.pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-140px, -135px) scale(.55) rotate(-540deg); }
-.pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -160px) scale(.55) rotate(540deg); }
-.pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(140px, -200px) scale(.55) rotate(540deg); }
+.pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-140px, -113px) scale(.55) rotate(-540deg); }
+.pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -138px) scale(.55) rotate(540deg); }
+.pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(140px, -178px) scale(.55) rotate(540deg); }
 .pk-pitch.saved .pk-ball { transform: translate(0, -60px) scale(.8) !important; transition-duration: .5s; }
 .pk-pitch.goal { animation: pk-goal .8s ease-out; }
 @keyframes pk-goal { 0% { box-shadow: 0 0 0 0 #da291c, 0 30px 60px #0009; } 40% { box-shadow: 0 0 0 10px #da291c, 0 0 80px #da291c; } }
@@ -3619,10 +3621,60 @@ html { overflow-x: clip; } /* belt and braces: nothing should ever widen the pho
 .pk-score b { color: #fff; font-weight: 600; }
 @media (max-width: 560px) {
   .pk-pitch { height: 250px; }
-  .pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-95px, -86px) scale(.55); }
-  .pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -111px) scale(.55); }
-  .pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(95px, -161px) scale(.55); }
+  .pk-pitch.shot[data-aim="0"] .pk-ball { transform: translate(-95px, -64px) scale(.55); }
+  .pk-pitch.shot[data-aim="1"] .pk-ball { transform: translate(0, -89px) scale(.55); }
+  .pk-pitch.shot[data-aim="2"] .pk-ball { transform: translate(95px, -139px) scale(.55); }
   .pk-pitch.shot[data-dive="0"] .pk-keeper { transform: translateX(-55px) rotate(-70deg); }
   .pk-pitch.shot[data-dive="2"] .pk-keeper { transform: translateX(55px) rotate(70deg); }
 }
 @media (prefers-reduced-motion: reduce) { .gt, .lol, .pk { animation: none; } .gt-str.hum { animation: none; } }
+
+/* hover emblems on the off-duty cards: a guitar, a League sigil, a Red Devil crest */
+.duty .emblem {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  width: 58px;
+  height: 58px;
+  color: var(--planet);
+  opacity: 0;
+  transform: scale(.5) rotate(-25deg);
+  transition: opacity .4s, transform .6s cubic-bezier(.3, 1.5, .5, 1), filter .4s;
+  pointer-events: none;
+}
+.duty .emblem svg, .duty .emblem img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.duty[data-duty="game"] .emblem { width: 104px; height: 42px; }
+.duty[data-duty="sports"] .emblem { width: 64px; height: 64px; }
+.duty:hover .emblem, .duty:focus-visible .emblem { opacity: 1; transform: none; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--planet) 60%, transparent)); }
+.duty[data-duty="game"]:hover .emblem { filter: drop-shadow(0 0 12px #0ac8b966); }
+.duty[data-duty="sports"]:hover .emblem { filter: drop-shadow(0 0 14px #da291c99); animation: crest 1.6s ease-in-out infinite; }
+@keyframes crest { 50% { translate: 0 -3px; } }
+@media (hover: none) { .duty .emblem { opacity: .9; transform: none; } }
+
+.fx-emblem { display: block; width: 64px; height: 64px; color: var(--planet); }
+.fx-emblem svg, .fx-emblem img { width: 100%; height: 100%; object-fit: contain; }
+.league-fx .fx-emblem { width: 180px; height: 70px; }
+.united-fx .fx-emblem { width: 96px; height: 96px; filter: drop-shadow(0 0 18px #da291c); }
+.league-fx .fx-emblem { filter: drop-shadow(0 0 12px #0ac8b955); }
+
+/* LED advertising board behind the goal */
+.pk-led {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  height: 22px;
+  overflow: hidden;
+  background: #120303;
+  border-block: 1px solid #000;
+  font-family: var(--mono);
+  font-size: .72rem;
+  line-height: 22px;
+  letter-spacing: .2em;
+  color: #ff3b2f;
+  text-shadow: 0 0 6px #ff3b2f;
+  white-space: nowrap;
+}
+.pk-led span { display: inline-block; animation: led 18s linear infinite; }
+@keyframes led { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .pk-led span { animation: none; } }

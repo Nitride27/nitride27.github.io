@@ -113,7 +113,9 @@
     audio.play().then(() => GESTURES.forEach(e => removeEventListener(e, unlock, true)), () => {});
   };
   GESTURES.forEach(e => addEventListener(e, unlock, true));
-  GESTURES.forEach(e => addEventListener(e, () => wake(), true)); // wake the effects too (touch only counts on touchend)
+  // wake the effects too. Browsers differ on which events count as a gesture (Firefox wants a full click,
+  // touch only counts on touchend), so listen to all of them; once the context is running this is a no-op
+  ["pointerdown", "pointerup", "click", "keydown", "keyup", "touchend"].forEach(e => addEventListener(e, () => wake(), true));
   setTimeout(sync, 1500); // after the arrival veil lifts
   const saveTime = () => store(() => sessionStorage.setItem("audio-time", audio.currentTime));
   addEventListener("pagehide", saveTime);
@@ -164,12 +166,32 @@
     src.start(t, Math.random()); src.stop(t + dur + 0.05);
   };
   const haptic = matchMedia("(hover: none)").matches && "vibrate" in navigator;
+  // engine rev: two detuned oscillators driven into a soft-clip curve, the filter opening as the revs climb
+  let drive = null;
+  const rev = () => {
+    const c = ac(); if (!c) return;
+    if (!drive) { drive = new Float32Array(1024).map((_, i) => Math.tanh((i / 512 - 1) * 6)); }
+    const t = c.currentTime, dur = 1.4, sh = c.createWaveShaper(), f = c.createBiquadFilter();
+    sh.curve = drive;
+    f.type = "lowpass"; f.Q.value = 3;
+    f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(2400, t + 0.4); f.frequency.exponentialRampToValueAtTime(320, t + dur);
+    [["sawtooth", 1], ["square", 1.012]].forEach(([type, k]) => {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.setValueAtTime(42 * k, t); o.frequency.exponentialRampToValueAtTime(150 * k, t + 0.42); o.frequency.exponentialRampToValueAtTime(64 * k, t + dur);
+      o.connect(sh); o.start(t); o.stop(t + dur + 0.05);
+    });
+    sh.connect(f).connect(env(c, t, 0.5, 0.1, dur));
+    hiss(dur * 0.9, { from: 260, to: 1900, vol: 0.22, q: 0.6, attack: 0.18 });
+  };
   const buzz = ms => haptic && navigator.userActivation?.hasBeenActive && navigator.vibrate(ms);
   const SOUNDS = {
     tick: () => tone(2400, 0.035, { type: "square", vol: 0.04 }),
     press: () => tone(900, 0.1, { type: "triangle", vol: 0.16, to: 520 }),
     blip: () => tone(1100 + Math.random() * 500, 0.05, { type: "square", vol: 0.05 }),
     hover: () => tone(1500, 0.14, { vol: 0.08, to: 1900 }),
+    coin: () => { tone(1568, 0.12, { type: "triangle", vol: 0.1 }); tone(2093, 0.25, { type: "triangle", vol: 0.09, delay: 0.06 }); },
+    rev: () => { rev(); buzz(30); },
     queue: () => [880, 1175, 1480].forEach((f, i) => tone(f, 0.6, { vol: 0.09, delay: i * 0.07 })),
     crowd: () => { hiss(2.6, { from: 500, to: 1100, vol: 0.3, q: 0.4, attack: 0.5 }); hiss(2.2, { from: 1500, to: 2600, vol: 0.12, q: 0.6, attack: 0.4, delay: 0.1 }); },
     powerup: () => { tone(110, 1, { type: "sawtooth", vol: 0.07, to: 880, attack: 0.8 }); hiss(1, { from: 200, to: 5000, vol: 0.2, attack: 0.9 }); },
@@ -823,9 +845,10 @@
     toast("Opening your mail app…");
   });
 
-  // ---------- asteroid blaster: 30 seconds, click rocks to blast them ----------
+  // ---------- last hit: farm a minion lane on Summoner's Rift. Your minions wear the enemy wave down;
+  // click one when its health is below your attack damage to take the gold. 60 seconds. ----------
   let playing = false;
-  const startBlaster = () => {
+  const startGame = () => {
     if (playing) return;
     playing = true;
     window.lenis?.stop();
@@ -836,74 +859,116 @@
     const g = cv.getContext("2d"), dpr = Math.min(devicePixelRatio, 2);
     const size = () => { cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
     size(); addEventListener("resize", size);
-    const accent = getComputedStyle(document.body).getPropertyValue("--planet").trim() || "#9cc9dc";
-    const best0 = +(store(() => localStorage.getItem("blaster-best")) || 0);
-    let rocks = [], bits = [], beams = [], score = 0, t0 = performance.now(), spawnAt = 0, over = false, raf;
-    const rock = (x, y, r, vx, vy) => ({ x, y, r, vx, vy, a: 0, va: (Math.random() - 0.5) * 0.04, pts: Array.from({ length: 10 }, () => 0.75 + Math.random() * 0.35) });
-    const spawn = () => {
-      const side = Math.random() * 4 | 0, r = 18 + Math.random() * 26;
-      const x = side === 0 ? -r : side === 1 ? innerWidth + r : Math.random() * innerWidth;
-      const y = side === 2 ? -r : side === 3 ? innerHeight + r : Math.random() * innerHeight;
-      const ang = Math.atan2(innerHeight / 2 - y, innerWidth / 2 - x) + (Math.random() - 0.5) * 1.2, sp = 1 + Math.random() * 1.6;
-      rocks.push(rock(x, y, r, Math.cos(ang) * sp, Math.sin(ang) * sp));
-    };
-    const ship = () => ({ x: innerWidth / 2, y: innerHeight - 40 });
-    const shoot = e => {
-      if (over) return restart();
-      const s0 = ship();
-      beams.push({ x1: s0.x, y1: s0.y, x2: e.clientX, y2: e.clientY, life: 1 });
-      rocks.forEach(k => {
-        if (Math.hypot(k.x - e.clientX, k.y - e.clientY) > k.r + 6) return;
-        k.dead = true;
-        score += Math.round(60 - k.r);
-        for (let i = 0; i < 14; i++) bits.push({ x: k.x, y: k.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 1 });
-        if (k.r > 26) for (let i = 0; i < 2; i++) rocks.push(rock(k.x, k.y, k.r * 0.55, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4));
+    const GOLD = "#c8aa6e", TEAL = "#0ac8b9", AD = 55, CD = 850, ROUND = 60;
+    const KINDS = { melee: { hp: 170, r: 15, gold: 21 }, caster: { hp: 120, r: 12, gold: 14 }, cannon: { hp: 360, r: 20, gold: 60 } };
+    const bestKey = "lasthit-best", best = () => +(store(() => localStorage.getItem(bestKey)) || 0);
+    let mins = [], bolts = [], texts = [], cs = 0, gold = 0, missed = 0, wave = 0, waveAt = 0, readyAt = 0, t0 = performance.now(), over = false, raf;
+    const lane = () => ({ y: innerHeight * 0.55, champ: { x: Math.max(60, innerWidth * 0.1), y: innerHeight * 0.55 } });
+    const spawnWave = now => {
+      wave++;
+      const list = ["melee", "melee", "melee", "caster", "caster", "caster"];
+      if (wave % 3 === 0) list.splice(3, 0, "cannon");
+      list.forEach((k, i) => {
+        const K = KINDS[k], row = i % 3;
+        mins.push({ k, hp: K.hp, max: K.hp, r: K.r, gold: K.gold, x: innerWidth + 30 + i * 34, y: lane().y + (row - 1) * 46,
+          stopX: innerWidth * (0.5 + (k === "caster" ? 0.1 : k === "cannon" ? 0.06 : 0) + Math.random() * 0.04), next: now + 900 + Math.random() * 900 });
       });
-      rocks = rocks.filter(k => !k.dead);
+    };
+    const float = (x, y, txt, col) => texts.push({ x, y, txt, col, life: 1 });
+    const attack = e => {
+      if (over) return restart();
+      const now = performance.now();
+      const m = mins.filter(m => !m.dead).sort((a, b) => Math.hypot(a.x - e.clientX, a.y - e.clientY) - Math.hypot(b.x - e.clientX, b.y - e.clientY))[0];
+      if (!m || Math.hypot(m.x - e.clientX, m.y - e.clientY) > m.r + 22) return;
+      if (now < readyAt) { float(e.clientX, e.clientY - 20, "on cooldown", "#a09b8c"); return; }
+      readyAt = now + CD;
+      const c = lane().champ;
+      bolts.push({ x: c.x, y: c.y, m });
+      window.sfx.play("blip");
     };
     const quit = () => {
       cancelAnimationFrame(raf); cv.remove(); hud.remove(); exit.remove(); playing = false; window.lenis?.start();
       removeEventListener("keydown", onKey); removeEventListener("resize", size);
     };
     const onKey = e => { if (e.key === "Escape") quit(); };
-    const restart = () => { rocks = []; bits = []; beams = []; score = 0; t0 = performance.now(); over = false; };
-    cv.addEventListener("pointerdown", shoot);
-    exit.addEventListener("click", () => quit());
+    const restart = () => { mins = []; bolts = []; texts = []; cs = gold = missed = wave = 0; waveAt = 0; t0 = performance.now(); over = false; };
+    cv.addEventListener("pointerdown", attack);
+    exit.addEventListener("click", quit);
     addEventListener("keydown", onKey);
+    const kill = (m, byYou) => {
+      m.dead = true;
+      if (byYou) { cs++; gold += m.gold; float(m.x, m.y - m.r - 18, "+" + m.gold, GOLD); window.sfx.play("coin"); }
+      else { missed++; float(m.x, m.y - m.r - 18, "missed", "#a09b8c"); }
+    };
+    let last = performance.now();
     const frame = now => {
       raf = requestAnimationFrame(frame);
-      const left = Math.max(0, 30 - (now - t0) / 1000);
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      const left = Math.max(0, ROUND - (now - t0) / 1000);
       if (!over && left === 0) {
         over = true;
-        const best = Math.max(best0, score, +(store(() => localStorage.getItem("blaster-best")) || 0));
-        store(() => localStorage.setItem("blaster-best", best));
-        if (score >= 400) collect("blaster");
+        store(() => localStorage.setItem(bestKey, Math.max(best(), cs)));
+        if (cs >= 15) collect("blaster"); // fragment id kept from the old asteroid game so saved progress still counts
       }
-      if (!over && now > spawnAt) { spawn(); spawnAt = now + Math.max(260, 700 - (30 - left) * 14); }
-      g.clearRect(0, 0, innerWidth, innerHeight);
-      g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 0, innerWidth, innerHeight);
-      g.lineWidth = 1.5; g.strokeStyle = accent;
-      rocks.forEach(k => {
-        k.x += k.vx; k.y += k.vy; k.a += k.va;
+      if (!over && now > waveAt) { spawnWave(now); waveAt = now + 11000; }
+      const L = lane(), c = L.champ;
+      // the rift: dark jungle, a worn lane, the river glinting through the middle
+      g.fillStyle = "rgba(4,14,10,.92)"; g.fillRect(0, 0, innerWidth, innerHeight);
+      g.fillStyle = "#1b2a22"; g.fillRect(0, L.y - 95, innerWidth, 190);
+      g.fillStyle = "#24362c"; g.fillRect(0, L.y - 80, innerWidth, 160);
+      g.fillStyle = "rgba(10,200,185,.07)"; g.fillRect(innerWidth * 0.44, L.y - 95, innerWidth * 0.04, 190);
+      // minions: walk in, stop at the fight line, and take chip damage from your (unseen) wave
+      mins.forEach(m => {
+        if (m.dead) return;
+        if (m.x > m.stopX) m.x -= 180 * dt;
+        else if (!over && now > m.next) {
+          m.hp -= 10 + Math.random() * 16;
+          m.next = now + 700 + Math.random() * 700;
+          if (m.hp <= 0) kill(m, false);
+        }
+        if (m.dead) return;
+        g.fillStyle = "#c2352b"; g.strokeStyle = "#ffb4a8"; g.lineWidth = 2;
         g.beginPath();
-        k.pts.forEach((m, i) => { const a = k.a + (i / k.pts.length) * Math.PI * 2; g[i ? "lineTo" : "moveTo"](k.x + Math.cos(a) * k.r * m, k.y + Math.sin(a) * k.r * m); });
-        g.closePath(); g.stroke();
+        if (m.k === "cannon") g.rect(m.x - m.r, m.y - m.r * 0.8, m.r * 2, m.r * 1.6);
+        else if (m.k === "caster") { g.moveTo(m.x, m.y - m.r); g.lineTo(m.x + m.r, m.y); g.lineTo(m.x, m.y + m.r); g.lineTo(m.x - m.r, m.y); g.closePath(); }
+        else g.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        g.fill(); g.stroke();
+        // health bar, with a notch at your attack damage; it lights up when one hit will finish it
+        const w = m.r * 2.6, bx = m.x - w / 2, by = m.y - m.r - 12, killable = m.hp <= AD;
+        g.fillStyle = "#000"; g.fillRect(bx - 1, by - 1, w + 2, 7);
+        g.fillStyle = killable ? "#fff" : "#d8443a"; g.fillRect(bx, by, w * Math.max(0, m.hp / m.max), 5);
+        g.fillStyle = GOLD; g.fillRect(bx + w * (AD / m.max), by - 2, 1.5, 9);
       });
-      rocks = rocks.filter(k => k.x > -80 && k.x < innerWidth + 80 && k.y > -80 && k.y < innerHeight + 80);
-      beams.forEach(b => { g.globalAlpha = b.life; g.beginPath(); g.moveTo(b.x1, b.y1); g.lineTo(b.x2, b.y2); g.stroke(); b.life -= 0.08; });
-      bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.life -= 0.025; g.globalAlpha = Math.max(0, b.life); g.fillStyle = accent; g.fillRect(b.x, b.y, 2, 2); });
+      mins = mins.filter(m => !m.dead && m.x > -40);
+      // your champion: a hextech sigil with its attack range
+      g.strokeStyle = "rgba(200,170,110,.25)"; g.lineWidth = 1; g.beginPath(); g.arc(c.x, c.y, 34, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#0a1428"; g.strokeStyle = GOLD; g.lineWidth = 2.5;
+      g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + (i * Math.PI) / 3; g[i ? "lineTo" : "moveTo"](c.x + Math.cos(a) * 20, c.y + Math.sin(a) * 20); } g.closePath(); g.fill(); g.stroke();
+      const cdLeft = Math.max(0, readyAt - now) / CD;
+      g.strokeStyle = TEAL; g.lineWidth = 3; g.beginPath(); g.arc(c.x, c.y, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cdLeft)); g.stroke();
+      // auto attacks fly at the target and land a moment later, so time it
+      bolts.forEach(b => {
+        const dx = b.m.x - b.x, dy = b.m.y - b.y, d = Math.hypot(dx, dy), step = 1400 * dt;
+        if (d <= step || b.m.dead) {
+          b.done = true;
+          if (!b.m.dead) { b.m.hp -= AD; if (b.m.hp <= 0) kill(b.m, true); }
+          return;
+        }
+        b.x += (dx / d) * step; b.y += (dy / d) * step;
+        g.fillStyle = TEAL; g.shadowColor = TEAL; g.shadowBlur = 12; g.beginPath(); g.arc(b.x, b.y, 5, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+      });
+      bolts = bolts.filter(b => !b.done);
+      g.textAlign = "center"; g.font = "600 14px system-ui, sans-serif";
+      texts.forEach(t => { t.y -= 30 * dt; t.life -= dt * 1.1; g.globalAlpha = Math.max(0, t.life); g.fillStyle = t.col; g.fillText(t.txt, t.x, t.y); });
       g.globalAlpha = 1;
-      beams = beams.filter(b => b.life > 0); bits = bits.filter(b => b.life > 0);
-      const s0 = ship();
-      g.beginPath(); g.moveTo(s0.x, s0.y - 16); g.lineTo(s0.x - 11, s0.y + 10); g.lineTo(s0.x, s0.y + 4); g.lineTo(s0.x + 11, s0.y + 10); g.closePath();
-      g.fillStyle = "#e9ebee"; g.fill();
-      const best = Math.max(best0, +(store(() => localStorage.getItem("blaster-best")) || 0));
+      texts = texts.filter(t => t.life > 0);
+      const mm = Math.floor(left / 60), ss = String(Math.floor(left % 60)).padStart(2, "0");
       hud.innerHTML = over
-        ? `<b>${score}</b> points · best ${Math.max(best, score)}<span>Click to play again</span>`
-        : `<b>${score}</b> points · ${left.toFixed(1)}s · best ${best}<span>Click rocks to blast them</span>`;
+        ? `<b>${cs}</b> CS · ${gold} gold · ${missed} missed · best ${Math.max(best(), cs)}<span>${cs >= 15 ? "Clean farming. " : ""}Click to play again</span>`
+        : `<b>${cs}</b> CS · ${gold} gold · ${mm}:${ss} · best ${best()}<span>Hit a minion when its bar turns white</span>`;
     };
     raf = requestAnimationFrame(frame);
-    toast("Asteroid blaster: 30 seconds. Score 400 for a star fragment.");
+    toast("Last hit: 60 seconds in lane. 15 CS earns a star fragment.");
   };
 
   // ---------- star fragments: one hidden on each planet page, plus two earned by playing ----------
@@ -937,7 +1002,7 @@
 
   // ---------- captain's log: games and fragments ----------
   Object.assign(COMMANDS, {
-    play: () => { toggleTerm(false); setTimeout(startBlaster, 200); return "Launching asteroid blaster..."; },
+    play: () => { toggleTerm(false); setTimeout(startGame, 200); return "Queueing for Summoner's Rift..."; },
     land: () => { if (!ascii) return "No landing site on this page."; toggleTerm(false); setTimeout(startLander, 300); return "Lander released. Use ↑ or space to burn."; },
     fragments: () => { const h = found(); return `${h.size} / ${FRAGS.length} found. Missing: ${FRAGS.filter(f => !h.has(f)).join(", ") || "none"}.`; },
     badge: () => found().size === FRAGS.length
@@ -1034,7 +1099,7 @@
   // ---------- about: each off-duty card opens its own little scene in a full-screen overlay ----------
   // overlay(cls, label, html) -> { fx, close, onClose }; closes on Escape, a click on the backdrop, or any [data-close]
   const overlay = (cls, label, html) => {
-    if ($(".duty-fx")) return null;
+    if ($(".duty-fx:not(.out)")) return null; // one scene at a time; one that is fading out does not count
     const fx = document.createElement("div");
     fx.className = "duty-fx " + cls;
     fx.setAttribute("role", "dialog");
@@ -1058,6 +1123,9 @@
     return { fx, close, onClose: f => cleanups.push(f) };
   };
 
+  // each card's hover emblem doubles as the crest at the top of its scene
+  const emblem = d => `<span class="fx-emblem" aria-hidden="true">${$(`[data-duty="${d}"] .emblem`)?.innerHTML || ""}</span>`;
+
   // anime: speed lines, an impact frame, ゴゴゴ, petals and a title card
   const animeFx = () => {
     const go = Array.from({ length: 7 }, (_, i) => `<i class="af-go" style="--x:${8 + Math.random() * 84}%;--y:${10 + Math.random() * 75}%;--d:${(i * 0.09).toFixed(2)}s;--r:${(Math.random() * 30 - 15).toFixed(0)}deg">ゴ</i>`).join("");
@@ -1077,7 +1145,7 @@
   const guitarFx = () => {
     const OPEN = [82.41, 110, 146.83, 196, 246.94, 329.63]; // E2 A2 D3 G3 B3 E4, low to high
     const CHORDS = { Em: [0, 2, 2, 0, 0, 0], G: [3, 2, 0, 0, 0, 3], C: [-1, 3, 2, 0, 1, 0], D: [-1, -1, 0, 2, 3, 2], Am: [-1, 0, 2, 2, 1, 0] };
-    const o = overlay("guitar-fx", "Guitar", '<div class="gt">' +
+    const o = overlay("guitar-fx", "Guitar", '<div class="gt">' + emblem("music") +
       '<small>Standard tuning · E A D G B E</small><b>Play something</b>' +
       '<div class="gt-neck" data-lenis-prevent>' + '<i class="gt-fret"></i>'.repeat(5) + '<i class="gt-dot"></i>' +
       OPEN.map((_, k) => `<i class="gt-str" style="--k:${k}"></i>`).reverse().join("") + "</div>" + // high E on top, as you look down at it
@@ -1125,10 +1193,10 @@
     pick("Em");
   };
 
-  // gaming: the queue pops, like it does on Summoner's Rift. Accept and the asteroid blaster loads in
+  // gaming: the queue pops, like it does on Summoner's Rift. Accept and you load into the last-hit game
   const leagueFx = () => {
     const C = 2 * Math.PI * 46;
-    const o = overlay("league-fx", "Match found", '<div class="lol">' +
+    const o = overlay("league-fx", "Match found", '<div class="lol">' + emblem("game") +
       '<small>Summoner\'s Rift · 5v5 · Ranked Solo/Duo</small><b>Match found</b>' +
       `<div class="lol-ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46"/><circle class="lol-t" cx="50" cy="50" r="46" style="stroke-dasharray:${C};stroke-dashoffset:0"/></svg><span>10</span></div>` +
       '<button class="lol-accept" type="button">Accept!</button><button class="lol-decline" type="button" data-close>Decline</button>' +
@@ -1152,15 +1220,15 @@
       o.fx.classList.add("accepted");
       window.sfx.play("ok");
       msg.textContent = "Welcome to Summoner's Rift.";
-      setTimeout(() => { o.close(); setTimeout(startBlaster, 300); }, 1700);
+      setTimeout(() => { o.close(); setTimeout(startGame, 300); }, 1700);
     });
   };
 
   // sports: a penalty at the Stretford End. Pick a corner; the keeper guesses
   const unitedFx = () => {
-    const o = overlay("united-fx", "Penalty", '<div class="pk">' +
+    const o = overlay("united-fx", "Penalty", '<div class="pk">' + emblem("sports") +
       '<small>Old Trafford · Theatre of Dreams</small><b>Penalty to United</b>' +
-      '<div class="pk-pitch"><div class="pk-goal"><i class="pk-keeper"></i>' +
+      '<div class="pk-pitch"><div class="pk-led" aria-hidden="true"><span>' + "GLORY GLORY MAN UNITED · RED DEVILS · ".repeat(4) + '</span></div><div class="pk-goal"><i class="pk-keeper"></i>' +
       ["Bottom left", "Down the middle", "Top right"].map((t, i) => `<button type="button" class="pk-zone" data-z="${i}" aria-label="Shoot ${t.toLowerCase()}"></button>`).join("") +
       '</div><i class="pk-ball"></i></div>' +
       '<p class="pk-msg" aria-live="polite">Pick your corner.</p><p class="pk-score">Goals <b>0</b> · Saved <b>0</b></p>' +
