@@ -1395,7 +1395,7 @@
     const petals = Array.from({ length: 22 }, () => `<i class="af-petal" style="--x:${Math.random() * 100}%;--d:${(Math.random() * 4).toFixed(2)}s;--t:${(5 + Math.random() * 5).toFixed(1)}s;--s:${(0.6 + Math.random() * 0.8).toFixed(2)}"></i>`).join("");
     const o = overlay("anime-fx", "Anime Studio", '<i class="af-lines"></i><i class="af-flash"></i>' + go + petals +
       '<div class="af-card"><small>第27話 · Episode 27</small><b>Anime Studio</b><span class="af-jp">アニメ・スタジオ</span>' +
-      '<p>The anime habit turned into a living Wear OS watch face. Coming soon to Google Play.</p>' +
+      '<p>The anime habit turned into a living Wear OS watch face. Now on Google Play.</p>' +
       '<div class="af-acts"><a class="btn solid arrow" href="https://apps.samridhashrestha.com.np/animestudio/" target="_blank" rel="noopener">See Anime Studio</a>' +
       '<button class="btn" type="button" data-close>To be continued →</button></div></div>');
     if (!o) return;
