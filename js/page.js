@@ -736,7 +736,7 @@
       ["Éclat", "https://github.com/Nitride27/beautyinstitute-website"], ["aquahundred", "https://aquahundred.com.np"], ["Aqua Hundred", "https://aquahundred.com.np"],
       ["StayT", "https://apps.samridhashrestha.com.np/stayt/"], ["GTA VI", "https://apps.samridhashrestha.com.np/gta6guide/"],
       ["Anime Studio", "https://apps.samridhashrestha.com.np/animestudio/"], ["Contact management", "https://github.com/Nitride27/Contact_management_system"],
-      ["This portfolio", "index.html"], ["Every project", "https://github.com/Nitride27"], ["JARVIS", "https://github.com/Nitride27/Jarvis"],
+      ["This portfolio", "index.html"], ["Every project", "https://github.com/Nitride27"], ["Nitrova", "https://github.com/Nitride27/Nitrova"],
     ];
     const title = $(".used-title", usedPanel), list = $(".used-list", usedPanel), cat = $(".used-cat", usedPanel);
     const count = $(".used-count", usedPanel), meter = $$(".used-meter i", usedPanel), chips = $(".used-related .chips", usedPanel);
