@@ -468,7 +468,7 @@
     resume: () => { open("Files/Resume_2026.pdf", "_blank"); return "Opening resume."; },
     email: () => { copy("samridhashrestha10@gmail.com"); return "samridhashrestha10@gmail.com (copied)"; },
     github: () => { open("https://github.com/Nitride27", "_blank"); return "github.com/Nitride27"; },
-    linkedin: () => { open("https://www.linkedin.com/in/samridha-shrestha-55415820a/", "_blank"); return "Opening LinkedIn."; },
+    linkedin: () => { open("https://www.linkedin.com/in/samridhashrestha/", "_blank"); return "Opening LinkedIn."; },
     music: () => { setMuted(!muted); return muted ? "Music off." : "Music on."; },
     sudo: () => "Permission denied. Only the captain has root.",
     clear: () => { out.textContent = ""; return ""; },
