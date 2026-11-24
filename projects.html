@@ -72,7 +72,7 @@
 
     <section class="wrap" style="padding:0 0 2rem">
       <div class="numbers" data-reveal>
-        <div><b data-count="20">20</b><span>projects here</span></div>
+        <div><b data-count="23">23</b><span>projects here</span></div>
         <div><b data-count="96.97" data-decimals="2">96.97</b><span>best model accuracy, %</span></div>
         <div><b data-count="11">11</b><span>sites and apps live</span></div>
         <div><b data-count="4">4</b><span>years of building, 2023–2026</span></div>
@@ -168,7 +168,7 @@
         <button type="button" data-filter="app" aria-pressed="false">Apps</button>
         <button type="button" data-filter="web" aria-pressed="false">Web</button>
         <button type="button" data-filter="game" aria-pressed="false">Games</button>
-        <button type="button" data-filter="cpp" aria-pressed="false">C++</button>
+        <button type="button" data-filter="tool" aria-pressed="false">Tools</button>
       </div>
       <ul class="proj-grid">
         <li data-cat="ai" class="wide"><a class="proj-card panel" href="https://github.com/Nitride27/Nitrova" target="_blank" rel="noopener"><div class="proj-thumb scroll" style="--dur:3s"><img src="images/nitrova.webp" alt="" loading="lazy" decoding="async"><small>Real UI · scripted session</small></div><div class="proj-body"><span class="proj-kind">AI agent · Python · 2026</span><h3>Nitrova</h3><p>A personal AI assistant for Linux (formerly JARVIS). A zero-token router sends each request to the cheapest model that can handle it (a local Ollama model, Groq, Gemini or Claude), and Claude supervises: any risky action a cheaper model proposes is re-planned by it. A policy engine asks before anything risky, a token-saving harness cut input tokens by about 40% in a measured A/B, and it has long-term memory, schedules, Gmail and Calendar, desktop control and local voice.</p><span class="proj-foot"><span class="num">05</span><span class="go">GitHub ↗</span></span></div></a></li>
@@ -186,7 +186,42 @@
         <li data-cat="web"><a class="proj-card panel" href="https://nitride27.github.io/fathers-day/" target="_blank" rel="noopener"><div class="proj-thumb scroll" style="--dur:10s"><img src="images/full-fathers.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Web · Next.js · 2026</span><h3>BUWA. Father's Day</h3><p>A warm, editorial scrollytelling site for Kushe Aunsi, Nepal's Father's Day. Static export on GitHub Pages.</p><span class="proj-foot"><span class="num">17</span><span class="go">Live site ↗</span></span></div></a><a class="proj-code" href="https://github.com/Nitride27/fathers-day" target="_blank" rel="noopener">Code ↗</a></li>
         <li data-cat="game"><a class="proj-card panel" href="https://github.com/Nitride27/Fighting-game" target="_blank" rel="noopener"><div class="proj-thumb"><img src="images/fighting_game.webp" alt="" loading="lazy" decoding="async"></div><div class="proj-body"><span class="proj-kind">Game · Pygame · 2023</span><h3>Fighting game</h3><p>A Tekken-style fighter with animations, collision detection and responsive controls.</p><span class="proj-foot"><span class="num">18</span><span class="go">GitHub ↗</span></span></div></a></li>
         <li data-cat="game"><a class="proj-card panel" href="https://github.com/Nitride27/Blackhole-Simulation" target="_blank" rel="noopener"><div class="proj-thumb bh" data-blackhole><img src="images/blackhole.webp" alt="" loading="lazy" decoding="async"><canvas aria-hidden="true"></canvas><small>Hover to run the simulation</small></div><div class="proj-body"><span class="proj-kind">Sim · Pygame · 2024</span><h3>Black hole simulation</h3><p>Particles fall under a point mass and get swallowed at the horizon. Hover the card (or scroll to it on a phone) to run the same physics live.</p><span class="proj-foot"><span class="num">19</span><span class="go">GitHub ↗</span></span></div></a></li>
-        <li data-cat="cpp" class="wide"><a class="proj-card panel" href="https://github.com/Nitride27/Contact_management_system" target="_blank" rel="noopener"><div class="proj-thumb termthumb" aria-hidden="true"><pre data-transcript>Contact Management
+        <li data-cat="ai tool"><a class="proj-card panel" href="https://github.com/Nitride27/clipperr" target="_blank" rel="noopener"><div class="proj-thumb termthumb" aria-hidden="true"><pre>&gt; run.bat
+-&gt; http://127.0.0.1:8765
+
+mode    vod  twitch.tv/videos/…
+watching chat velocity + hype words
+
+spike  ×41 kekw       clip from just before
+spike  "clip it" ×18  clip
+
+captions  faster-whisper, on the GPU
+encode    NVENC
+[+ More clips]  [Download all .zip]</pre></div><div class="proj-body"><span class="proj-kind">Tool · Python · 2026</span><h3>clipperr</h3><p>Auto-clips streams where chat goes off. No AI picks the moments: chat velocity does. Whisper writes the captions.</p><span class="proj-foot"><span class="num">20</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="app tool"><a class="proj-card panel" href="https://github.com/Nitride27/controller" target="_blank" rel="noopener"><div class="proj-thumb termthumb" aria-hidden="true"><pre>Phone Pad.cmd
+pairing code in the title bar
+
+iPhone (Expo Go)  -&gt;  Windows laptop
+games see    Xbox 360 pad
+style        PS5 &lt;-&gt; Xbox (tap status)
+rumble       -&gt; phone haptics
+
+back tap     L2 / R2
+edge tap     L1 / R1
+set up taps  hold 5 s, tap each spot 3x</pre></div><div class="proj-body"><span class="proj-kind">Tool · React Native · 2026</span><h3>Phone Pad</h3><p>Turns an iPhone into a PS5- or Xbox-style controller for a Windows laptop, with rumble as haptics and back taps as triggers.</p><span class="proj-foot"><span class="num">21</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="tool"><a class="proj-card panel" href="https://github.com/Nitride27/nvc" target="_blank" rel="noopener"><div class="proj-thumb termthumb" aria-hidden="true"><pre>nvc · Neovim laid out like an AI IDE
+
+[ tree ][   editor   ][ Claude ]
+
+Alt+v      file tree
+Alt+e      editor
+Alt+c      Claude Code
+Alt+o      opencode
+Alt+t      PowerShell under the editor
+Alt+hjkl   move between panes
+leader     \
+.ipynb     edited inline</pre></div><div class="proj-body"><span class="proj-kind">Tool · Lua · 2026</span><h3>nvc</h3><p>A single-file Neovim setup with a file tree, editor and Claude Code / opencode panes, plus inline Jupyter notebooks.</p><span class="proj-foot"><span class="num">22</span><span class="go">GitHub ↗</span></span></div></a></li>
+        <li data-cat="tool" class="wide"><a class="proj-card panel" href="https://github.com/Nitride27/Contact_management_system" target="_blank" rel="noopener"><div class="proj-thumb termthumb" aria-hidden="true"><pre data-transcript>Contact Management
 1. Add Contact
 2. Search Contact
 3. Help
@@ -210,7 +245,7 @@ Contact Management
 3. Help
 4. Exit
 Enter your choice: 4
-Thank you. Hope to see you again!</pre></div><div class="proj-body"><span class="proj-kind">Tool · C++ · 2023</span><h3>Contact management system</h3><p>A console contact book with phone validation. The preview is a real session, compiled and run.</p><span class="proj-foot"><span class="num">20</span><span class="go">GitHub ↗</span></span></div></a></li>
+Thank you. Hope to see you again!</pre></div><div class="proj-body"><span class="proj-kind">Tool · C++ · 2023</span><h3>Contact management system</h3><p>A console contact book with phone validation. The preview is a real session, compiled and run.</p><span class="proj-foot"><span class="num">23</span><span class="go">GitHub ↗</span></span></div></a></li>
       </ul>
     </section>
 
