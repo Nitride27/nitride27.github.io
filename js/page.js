@@ -799,8 +799,6 @@
   // phones have no hover, so site captures scroll on their own while on screen
   if (touch) $$(".proj-thumb.scroll, .scroller").forEach(t => seen(t, () => t.classList.add("auto"), () => t.classList.remove("auto")));
   $$(".proj-thumb.chart").forEach(c => seen(c, () => c.classList.add("on")));
-  // the looping tool demos only run while on screen
-  $$(".proj-thumb.demo").forEach(d => seen(d, () => d.classList.add("on"), () => d.classList.remove("on")));
   // the C++ session types itself out
   $$("[data-transcript]").forEach(pre => {
     const full = pre.textContent;
